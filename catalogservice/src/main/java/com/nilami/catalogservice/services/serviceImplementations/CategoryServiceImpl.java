@@ -1,6 +1,7 @@
 package com.nilami.catalogservice.services.serviceImplementations;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
@@ -23,7 +24,8 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public CategoryDTO getCategory(String categoryId) {
-        Category category = categoryRepository.findById(categoryId)
+        UUID categoryIdInUUID=UUID.fromString(categoryId);
+        Category category = categoryRepository.findById(categoryIdInUUID)
                 .orElseThrow(() -> new RuntimeException("Category not found"));
         return CategoryDTO.toCategoryDTO(category);
     }
@@ -49,7 +51,8 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public CategoryDTO updateCategory(String categoryId, CategoryRequest request) {
-        Category category = categoryRepository.findById(categoryId)
+         UUID categoryIdInUUID=UUID.fromString(categoryId);
+        Category category = categoryRepository.findById(categoryIdInUUID)
                 .orElseThrow(() -> new RuntimeException("Category not found"));
         category.setName(request.getName());
         category.setDescription(request.getDescription());
@@ -59,6 +62,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public void deleteCategory(String categoryId) {
-        categoryRepository.deleteById(categoryId);
+         UUID categoryIdInUUID=UUID.fromString(categoryId);
+        categoryRepository.deleteById(categoryIdInUUID);
     }
 }

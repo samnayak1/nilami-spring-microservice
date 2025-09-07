@@ -6,6 +6,7 @@ import lombok.*;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -13,11 +14,12 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @Entity
+@Table(name = "categories")
 public class Category {
 
     @Id
     @UuidGenerator
-    private String id;
+    private UUID id;
 
     @Column(nullable = false, unique = true)
     private String name;

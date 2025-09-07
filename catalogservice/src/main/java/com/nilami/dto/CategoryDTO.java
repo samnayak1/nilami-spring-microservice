@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.UUID;
 
 import com.nilami.catalogservice.models.Category;
 
@@ -18,7 +19,7 @@ import com.nilami.catalogservice.models.Category;
 @Builder
 public class CategoryDTO {
 
-    private String id;
+    private UUID id;
 
     private String name;
 

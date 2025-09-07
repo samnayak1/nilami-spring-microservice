@@ -2,6 +2,7 @@ package com.nilami.catalogservice.services.serviceImplementations;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
@@ -31,7 +32,8 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public ItemDTO getItem(String itemId) {
-        Item item = itemRepository.findById(itemId)
+        UUID itemIdInUUID=UUID.fromString(itemId);
+        Item item = itemRepository.findById(itemIdInUUID)
                 .orElseThrow(() -> new RuntimeException("Item not found"));
         return ItemDTO.toItemDTO(item);
     }
@@ -48,15 +50,16 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public boolean checkIfExpiryDatePassed(String itemId) {
-        Item item = itemRepository.findById(itemId)
+         UUID itemIdInUUID=UUID.fromString(itemId);
+        Item item = itemRepository.findById(itemIdInUUID)
                 .orElseThrow(() -> new RuntimeException("Item not found"));
         return item.getExpiryTime().toInstant().isBefore(Instant.now());
     }
 
     @Override
     public ItemDTO createItem(CreateItemRequestType request) {
-
-        Category category=categoryRepository.findById(request.getCategoryId())
+         UUID categoryIdInUUID=UUID.fromString(request.getCategoryId());
+        Category category=categoryRepository.findById(categoryIdInUUID)
             .orElseThrow(() -> new RuntimeException("Category not found"));
 
 

@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -17,6 +18,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -30,11 +32,12 @@ import lombok.Setter;
 @AllArgsConstructor
 @Entity
 @Builder
+@Table(name = "items")
 public class Item {
 
     @Id
     @UuidGenerator
-    private String id;
+    private UUID id;
 
     @Column(nullable = false)
     private String title;

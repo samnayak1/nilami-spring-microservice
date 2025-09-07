@@ -11,6 +11,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 import com.nilami.catalogservice.models.Item;
 
@@ -21,7 +22,7 @@ import com.nilami.catalogservice.models.Item;
 @Builder
 public class ItemDTO {
 
-    private String id;
+    private UUID id;
 
     private String title;
 
@@ -35,7 +36,7 @@ public class ItemDTO {
 
     private List<String> pictureIds;
 
-    private String categoryId;
+    private UUID categoryId;
 
     private Date expiryTime;
 
