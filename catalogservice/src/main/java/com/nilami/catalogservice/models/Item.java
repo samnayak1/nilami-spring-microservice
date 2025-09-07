@@ -10,6 +10,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.UuidGenerator;
 
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
@@ -23,13 +24,14 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
 @EqualsAndHashCode
 @AllArgsConstructor
+@NoArgsConstructor
 @Entity
 @Builder
 @Table(name = "items")
@@ -55,7 +57,12 @@ public class Item {
     @Column(nullable = false)
     private String creatorUserId;
 
-    @ElementCollection
+   @ElementCollection
+   @CollectionTable(
+      name = "item_pictures",
+      joinColumns = @JoinColumn(name = "item_id")
+    )
+   @Column(name = "picture_id")
     private List<String> pictureIds;
 
    @ManyToOne(fetch = FetchType.LAZY, optional = false)

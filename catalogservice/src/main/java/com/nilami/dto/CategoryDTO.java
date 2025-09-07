@@ -29,13 +29,10 @@ public class CategoryDTO {
 
 
     public static CategoryDTO toCategoryDTO(Category category) {
-  
-
-        return CategoryDTO.builder()
+           return CategoryDTO.builder()
                 .id(category.getId())
                 .name(category.getName())
                 .description(category.getDescription())
-           
                 .build();
     }
 }

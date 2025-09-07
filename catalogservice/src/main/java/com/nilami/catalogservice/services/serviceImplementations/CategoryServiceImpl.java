@@ -46,6 +46,7 @@ public class CategoryServiceImpl implements CategoryService {
                 .description(request.getDescription())
                 .build();
         Category saved = categoryRepository.save(category);
+        System.out.println("saved:"+saved);
         return CategoryDTO.toCategoryDTO(saved);
     }
 
@@ -54,8 +55,12 @@ public class CategoryServiceImpl implements CategoryService {
          UUID categoryIdInUUID=UUID.fromString(categoryId);
         Category category = categoryRepository.findById(categoryIdInUUID)
                 .orElseThrow(() -> new RuntimeException("Category not found"));
-        category.setName(request.getName());
-        category.setDescription(request.getDescription());
+        if(request.getName()!=null){
+          category.setName(request.getName());
+        }
+        if(request.getDescription()!=null){
+         category.setDescription(request.getDescription());
+        }
         Category updated = categoryRepository.save(category);
         return CategoryDTO.toCategoryDTO(updated);
     }
