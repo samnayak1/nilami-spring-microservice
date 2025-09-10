@@ -1,0 +1,16 @@
+services:
+  registry-server:
+    image: registryservice
+    build: .
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"  
+    networks:
+      - mynetwork
+    environment:
+      - SERVER_PORT=8080 
+
+networks:
+  mynetwork:
+    driver: bridge
