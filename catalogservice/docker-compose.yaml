@@ -6,7 +6,8 @@ services:
     restart: always
     volumes:
       - postgresData:/var/lib/postgresql/data
- 
+    env_file:
+      - .env
     environment:
        - POSTGRES_DB=nilami_catalog
        - POSTGRES_USER=${POSTGRES_USER}
@@ -26,6 +27,8 @@ services:
     depends_on: 
       db:
         condition: service_healthy
+    env_file:
+      - .env
     ports:
       - "8080:8080"  
     networks:
