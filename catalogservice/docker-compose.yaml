@@ -1,15 +1,15 @@
 services:
-  db:
+  catalog_db:
     image: postgres
     ports:
-      - ${POSTGRES_PORT}:${POSTGRES_PORT}
+      - ${POSTGRES_PORT}:5432
     restart: always
     volumes:
       - postgresData:/var/lib/postgresql/data
     env_file:
       - .env
     environment:
-       - POSTGRES_DB=nilami_catalog
+       - POSTGRES_DB=${POSTGRES_DB}
        - POSTGRES_USER=${POSTGRES_USER}
        - PGUSER=${POSTGRES_USER}
        - POSTGRES_PASSWORD=${POSTGRES_PWD}     
@@ -25,7 +25,7 @@ services:
     image: catalogbackend
     build: .
     depends_on: 
-      db:
+      catalog_db:
         condition: service_healthy
     env_file:
       - .env
