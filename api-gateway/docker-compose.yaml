@@ -25,6 +25,8 @@ services:
        - POSTGRES_PASSWORD=${POSTGRES_PWD}
     volumes:
       - ./volume-data/postgres_keycloak_data:/var/lib/postgresql/data
+    networks:
+      - mynetwork
     ports:
       - ${POSTGRES_PORT}:5432
 
@@ -44,6 +46,8 @@ services:
       - "8181:8080"
     volumes:
       - ./docker/keycloak/realms/:/opt/keycloak/data/import/
+    networks:
+      - mynetwork
     depends_on:
       - keycloak-postgres
 
