@@ -8,19 +8,23 @@ import org.springframework.security.config.annotation.web.reactive.EnableWebFlux
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 
 import org.springframework.security.web.server.SecurityWebFilterChain;
+
 @Configuration
-@EnableWebFluxSecurity  
+@EnableWebFluxSecurity
 public class SecurityConfig {
-    
+
     @Bean
     public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
         return http
+            .csrf(ServerHttpSecurity.CsrfSpec::disable) // disable CSRF for APIs
             .authorizeExchange(exchanges -> exchanges
-                .anyExchange().authenticated() 
+                .pathMatchers(
+                    "/api/v1/gateway/login",
+                    "/api/v1/gateway/test"
+                ).permitAll()          // make these routes public
+                .anyExchange().authenticated() // secure everything else
             )
-            .oauth2ResourceServer(oauth2 -> oauth2
-                .jwt(Customizer.withDefaults())
-            )
+            .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
             .build();
     }
 }
