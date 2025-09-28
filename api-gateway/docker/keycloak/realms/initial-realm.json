@@ -1,0 +1,36 @@
+{
+  "realm": "nilami-microservices-security-realm",
+  "enabled": true,
+  "roles": {
+    "realm": [
+      {"name": "CUSTOMER"},
+      {"name": "SELLER"},
+      {"name": "ADMIN"}
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "nilami-client",
+      "enabled": true,
+      "secret": "${KEYCLOAK_CLIENT_SECRET}",
+      "publicClient": false,
+      "directAccessGrantsEnabled": true
+    }
+  ],
+  "users": [
+    {
+      "username": "admin",
+      "email": "admin@nilami.com",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "${KEYCLOAK_ADMIN_PASSWORD}",
+          "value": "SAM123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["ADMIN"]
+    }
+  ]
+}
