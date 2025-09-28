@@ -25,8 +25,8 @@
       "emailVerified": true,
       "credentials": [
         {
-          "type": "${KEYCLOAK_ADMIN_PASSWORD}",
-          "value": "SAM123",
+          "type": "password",
+          "value": "${KEYCLOAK_ADMIN_PASSWORD}",
           "temporary": false
         }
       ],
