@@ -18,6 +18,8 @@ services:
   keycloak-postgres:
     container_name: keycloak-postgres
     image: postgres:15
+    env_file:
+      - .env
     environment:
        - POSTGRES_DB=${POSTGRES_DB}
        - POSTGRES_USER=${POSTGRES_USER}
@@ -33,7 +35,9 @@ services:
   keycloak:
     container_name: keycloak
     image: quay.io/keycloak/keycloak:24.0.1
-    command: [ "start-dev",   "--import-realm" ]
+    command: [ "start-dev" ]
+    env_file:
+      - .env
     environment:
       DB_VENDOR: POSTGRES
       DB_ADDR: keycloak-postgres
@@ -51,7 +55,9 @@ services:
     depends_on:
       - keycloak-postgres
 
-
+volumes:
+  postgres_keycloak_data:  
+    driver: local
 networks:
   mynetwork:
     driver: bridge

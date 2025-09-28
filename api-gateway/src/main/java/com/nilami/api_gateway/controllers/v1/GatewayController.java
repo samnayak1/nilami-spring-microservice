@@ -2,6 +2,7 @@ package com.nilami.api_gateway.controllers.v1;
 
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -19,57 +20,129 @@ import org.springframework.web.client.RestTemplate;
 
 import com.nilami.api_gateway.configs.KeycloakClientProperties;
 import com.nilami.api_gateway.controllers.requestTypes.LoginRequest;
+import com.nilami.api_gateway.controllers.requestTypes.SignupRequest;
+import com.nilami.api_gateway.dto.ApiResponse;
+import com.nilami.api_gateway.exceptions.KeycloakClientError;
+import com.nilami.api_gateway.models.UserModel;
+import com.nilami.api_gateway.services.UserAuthSignupService;
+import com.nilami.api_gateway.services.externalClients.AuthClient;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import feign.FeignException;
 
 @RestController
 @RequestMapping("/api/v1/gateway")
 public class GatewayController {
-
+    private static final Logger log = LoggerFactory.getLogger(GatewayController.class);
     private final RestTemplate restTemplate = new RestTemplate();
-   private final KeycloakClientProperties clientProps;
+    private final KeycloakClientProperties clientProps;
+    private UserAuthSignupService userAuthSignupService;
+    private AuthClient authClient;
+    
 
-    public GatewayController(KeycloakClientProperties clientProps) {
+    @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
+    private String keycloakRealm;
+
+    public GatewayController(
+            KeycloakClientProperties clientProps,
+            UserAuthSignupService userAuthSignupService,
+            AuthClient authClient) {
         this.clientProps = clientProps;
+        this.userAuthSignupService = userAuthSignupService;
+        this.authClient = authClient;
     }
 
-
-     @GetMapping("/test")
+    @GetMapping("/test")
     public ResponseEntity<String> testController() {
         return ResponseEntity.ok("Hello from gateway");
     }
 
-@SuppressWarnings("rawtypes")
-@PostMapping("/login")
-public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
-    System.out.println("Login started");
-    try {
-        String tokenUrl = "http://keycloak:8080/realms/nilami-microservices-security-realm/protocol/openid-connect/token";
+    @SuppressWarnings("rawtypes")
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
+        System.out.println("Login started");
+        try {
+            String tokenUrl = keycloakRealm+"/protocol/openid-connect/token";
 
-        MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
-        form.add("client_id", clientProps.getClientId());
-        form.add("client_secret", clientProps.getClientSecret());
-        form.add("grant_type", "password");
-        form.add("username", loginRequest.getUserName());
-        form.add("password", loginRequest.getPassword());
+            MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
+            form.add("client_id", clientProps.getClientId());
+            form.add("client_secret", clientProps.getClientSecret());
+            form.add("grant_type", "password");
+            form.add("username", loginRequest.getUserName());
+            form.add("password", loginRequest.getPassword());
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(form, headers);
+            HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(form, headers);
 
-        ResponseEntity<Map> response = restTemplate.postForEntity(tokenUrl, request, Map.class);
-        System.out.println("response from keycloak login"+response.getBody());
-        return ResponseEntity.ok(response.getBody());
+            ResponseEntity<Map> response = restTemplate.postForEntity(tokenUrl, request, Map.class);
+            System.out.println("response from keycloak login" + response.getBody());
+            return ResponseEntity.ok(response.getBody());
 
-    } catch (HttpClientErrorException e) {
-        // Covers 4xx errors from Keycloak (bad creds, unauthorized, etc.)
-        return ResponseEntity
-                .status(e.getStatusCode())
-                .body(Map.of("error", "Keycloak rejected login", "details", e.getResponseBodyAsString()));
-    } catch (Exception e) {
-        // Any other unexpected error
-        return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Unexpected error during login", "details", e.getMessage()));
+        } catch (HttpClientErrorException e) {
+            // Covers 4xx errors from Keycloak (bad creds, unauthorized, etc.)
+            return ResponseEntity
+                    .status(e.getStatusCode())
+                    .body(Map.of("error", "Keycloak rejected login", "details", e.getResponseBodyAsString()));
+        } catch (Exception e) {
+            // Any other unexpected error
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Unexpected error during login", "details", e.getMessage()));
+        }
     }
-}
+
+    @PostMapping("/signup")
+    public ResponseEntity<?> signup(@RequestBody SignupRequest signupRequest) {
+        String keycloakUserId = null;
+
+        try {
+            // Step 1: Create user in Keycloak
+            keycloakUserId = userAuthSignupService.createUser(signupRequest);
+
+            // Step 2: Call auth service via OpenFeign
+            UserModel authResponse = authClient.createUser(signupRequest);
+
+            // Step 3: Return success response
+            ApiResponse response = new ApiResponse("User registered successfully", authResponse);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+
+        } catch (KeycloakClientError e) {
+            // Keycloak creation failed
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse("Failed to create user in Keycloak: " + e.getMessage(), null));
+
+        } catch (FeignException e) {
+            // Auth service call failed - rollback Keycloak user
+            if (keycloakUserId != null) {
+                try {
+                    userAuthSignupService.deleteUser(keycloakUserId);
+                    log.info("Rolled back Keycloak user creation for userId: {}", keycloakUserId);
+                } catch (Exception rollbackException) {
+                    log.error("Failed to rollback Keycloak user creation for userId: {}", keycloakUserId,
+                            rollbackException);
+                }
+            }
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse("User registration failed: " + e.getMessage(), null));
+
+        } catch (Exception e) {
+            // Any other exception - rollback Keycloak user
+            if (keycloakUserId != null) {
+                try {
+                    userAuthSignupService.deleteUser(keycloakUserId);
+                    log.info("Rolled back Keycloak user creation for userId: {}", keycloakUserId);
+                } catch (Exception rollbackException) {
+                    log.error("Failed to rollback Keycloak user creation for userId: {}", keycloakUserId,
+                            rollbackException);
+                }
+            }
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse("Unexpected error during user registration", null));
+        }
+    }
 }

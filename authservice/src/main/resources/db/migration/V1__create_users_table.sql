@@ -1,0 +1,14 @@
+CREATE TABLE users (
+    id UUID PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    age INT,
+    profile_picture VARCHAR(512),
+    bio TEXT,
+    gender VARCHAR(20),
+    balance NUMERIC(19,2) DEFAULT 10,
+    address VARCHAR(255),
+    role VARCHAR(50) DEFAULT 'GUEST',
+    created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

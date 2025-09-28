@@ -20,7 +20,8 @@ public class SecurityConfig {
             .authorizeExchange(exchanges -> exchanges
                 .pathMatchers(
                     "/api/v1/gateway/login",
-                    "/api/v1/gateway/test"
+                    "/api/v1/gateway/test",
+                    "/api/v1/gateway/signup"
                 ).permitAll()          // make these routes public
                 .anyExchange().authenticated() // secure everything else
             )
