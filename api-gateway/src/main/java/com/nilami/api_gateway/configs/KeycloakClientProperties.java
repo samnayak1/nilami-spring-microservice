@@ -1,5 +1,6 @@
 package com.nilami.api_gateway.configs;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
 import org.springframework.beans.factory.annotation.Value;
@@ -42,14 +43,15 @@ public class KeycloakClientProperties {
 
 
 
-    @Bean
-    Keycloak keycloak() {
-        return KeycloakBuilder.builder()
-                .serverUrl(serverUrl)
-                .realm(keycloakRealm)
-                .clientId(clientId)
-                .username(adminUser)
-                .password(adminPassword)
-                .build();
-    }
+ @Bean
+Keycloak keycloak() {
+     return KeycloakBuilder.builder()
+            .serverUrl(serverUrl)
+            .realm("master")
+            .clientId("admin-cli") 
+            .username(adminUser)
+            .password(adminPassword)
+            .grantType(OAuth2Constants.PASSWORD)
+            .build();
+}
 }

@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+
 import com.nilami.api_gateway.configs.KeycloakClientProperties;
 import com.nilami.api_gateway.controllers.requestTypes.LoginRequest;
 import com.nilami.api_gateway.controllers.requestTypes.SignupRequest;
@@ -29,7 +30,6 @@ import com.nilami.api_gateway.services.externalClients.AuthClient;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import feign.FeignException;
 
 @RestController
 @RequestMapping("/api/v1/gateway")
@@ -94,55 +94,45 @@ public class GatewayController {
         }
     }
 
-    @PostMapping("/signup")
-    public ResponseEntity<?> signup(@RequestBody SignupRequest signupRequest) {
-        String keycloakUserId = null;
+@PostMapping("/signup")
+public ResponseEntity<ApiResponse> signup(@RequestBody SignupRequest signupRequest) {
+    String keycloakUserId = null;
 
-        try {
-            // Step 1: Create user in Keycloak
-            keycloakUserId = userAuthSignupService.createUser(signupRequest);
+    try {
 
-            // Step 2: Call auth service via OpenFeign
-            UserModel authResponse = authClient.createUser(signupRequest);
+        keycloakUserId = userAuthSignupService.createUser(signupRequest);
 
-            // Step 3: Return success response
-            ApiResponse response = new ApiResponse("User registered successfully", authResponse);
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+ 
+        UserModel authResponse = authClient.createUser(signupRequest);
 
-        } catch (KeycloakClientError e) {
-            // Keycloak creation failed
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ApiResponse("Failed to create user in Keycloak: " + e.getMessage(), null));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new ApiResponse("User registered successfully", authResponse));
 
-        } catch (FeignException e) {
-            // Auth service call failed - rollback Keycloak user
-            if (keycloakUserId != null) {
-                try {
-                    userAuthSignupService.deleteUser(keycloakUserId);
-                    log.info("Rolled back Keycloak user creation for userId: {}", keycloakUserId);
-                } catch (Exception rollbackException) {
-                    log.error("Failed to rollback Keycloak user creation for userId: {}", keycloakUserId,
-                            rollbackException);
-                }
-            }
+    } catch (KeycloakClientError e) {
+        return ResponseEntity.badRequest()
+                .body(new ApiResponse("Failed to create user in Keycloak: " + e.getMessage(), null));
 
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse("User registration failed: " + e.getMessage(), null));
-
-        } catch (Exception e) {
-            // Any other exception - rollback Keycloak user
-            if (keycloakUserId != null) {
-                try {
-                    userAuthSignupService.deleteUser(keycloakUserId);
-                    log.info("Rolled back Keycloak user creation for userId: {}", keycloakUserId);
-                } catch (Exception rollbackException) {
-                    log.error("Failed to rollback Keycloak user creation for userId: {}", keycloakUserId,
-                            rollbackException);
-                }
-            }
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse("Unexpected error during user registration", null));
-        }
+    } catch (Exception e) {
+        return handleRegistrationFailure(keycloakUserId, e);
     }
 }
+
+
+private ResponseEntity<ApiResponse> handleRegistrationFailure(String keycloakUserId, Exception ex) {
+    if (keycloakUserId != null) {
+        try {
+            userAuthSignupService.deleteUser(keycloakUserId);
+            log.info("Rolled back Keycloak user creation for userId: {}", keycloakUserId);
+        } catch (Exception rollbackEx) {
+            log.error("Failed to rollback Keycloak user creation for userId: {}", keycloakUserId, rollbackEx);
+        }
+    }
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(new ApiResponse("User registration failed: " + ex.getMessage(), null));
+}
+
+ 
+
+
+}
+

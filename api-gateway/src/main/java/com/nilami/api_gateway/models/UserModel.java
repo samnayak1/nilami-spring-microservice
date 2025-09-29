@@ -33,7 +33,7 @@ public class UserModel {
     private String address;
 
 
-    private Roles role; // Default role
+    private Roles role; 
 
  
     private Date created;

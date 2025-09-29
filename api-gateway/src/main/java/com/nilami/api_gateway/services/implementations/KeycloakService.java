@@ -33,24 +33,23 @@ public class KeycloakService implements UserAuthSignupService {
     public String createUser(SignupRequest signupRequest) {
         try {
             UserRepresentation user = new UserRepresentation();
-            user.setUsername(signupRequest.getName());
+            user.setUsername(signupRequest.getEmail());
             user.setEmail(signupRequest.getEmail());
             user.setEnabled(true);
             user.setEmailVerified(true);
 
-            // Create credentials
+            
             CredentialRepresentation credential = new CredentialRepresentation();
             credential.setType(CredentialRepresentation.PASSWORD);
             credential.setValue(signupRequest.getPassword());
             //The password is permanent. The user can continue logging in with it until it’s manually changed
             credential.setTemporary(false);
 
-            // Attach credentials
             List<CredentialRepresentation> credentials = new ArrayList<>();
             credentials.add(credential);
             user.setCredentials(credentials);
-
-            // Create user
+            System.out.println("realm"+realm);
+       
             UsersResource usersResource = keycloak.realm(realm).users();
             Response response = usersResource.create(user);
 
