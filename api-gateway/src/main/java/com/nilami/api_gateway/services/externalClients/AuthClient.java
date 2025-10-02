@@ -8,10 +8,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import com.nilami.api_gateway.controllers.requestTypes.SignupRequest;
 import com.nilami.api_gateway.models.UserModel;
 
-
-@FeignClient(name = "auth-service", url = "${AUTH_SERVICE_HOST}")
+@FeignClient(
+    name = "AUTH-SERVICE",
+    url="${AUTH_SERVICE_HOST}"
+)
 public interface AuthClient {
 
-    @PostMapping("/signup")
+    @PostMapping("/api/v1/auth/signup")
     UserModel createUser(@RequestBody SignupRequest signupRequest);
 }

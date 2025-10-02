@@ -1,5 +1,6 @@
 package com.nilami.authservice.controllers.v1;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,10 +16,8 @@ import com.nilami.authservice.services.UserSignupService;
 @RequestMapping("/api/v1/auth")
 public class AuthController {
 
-  
-     
     private final UserSignupService userSignupService;
-   
+
     public AuthController(UserSignupService userSignupService) {
         this.userSignupService = userSignupService;
     }
@@ -30,11 +29,18 @@ public class AuthController {
 
     @PostMapping("/signup")
     public ResponseEntity<ApiResponse> signup(@RequestBody SignupRequest request) {
-       
+        try {
+            String savedUserId = userSignupService.signupUser(request);
+            ApiResponse response = new ApiResponse("User registered successfully", savedUserId);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException ex) {
 
-        String savedUserId=userSignupService.signupUser(request);
+            ApiResponse response = new ApiResponse("Invalid request: " + ex.getMessage(), null);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        } catch (Exception ex) {
 
-        ApiResponse response = new ApiResponse("User registered successfully", savedUserId);
-        return ResponseEntity.ok(response);
+            ApiResponse response = new ApiResponse("An error occurred: " + ex.getMessage() + ex, null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 }

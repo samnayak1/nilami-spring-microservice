@@ -10,10 +10,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.nilami.catalogservice.controllers.requestTypes.CategoryRequest;
+import com.nilami.catalogservice.dto.CategoryDTO;
 import com.nilami.catalogservice.models.Category;
 import com.nilami.catalogservice.repositories.CategoryRepository;
 import com.nilami.catalogservice.services.serviceAbstractions.CategoryService;
-import com.nilami.dto.CategoryDTO;
 
 import lombok.RequiredArgsConstructor;
 

@@ -1,5 +1,7 @@
 package com.nilami.api_gateway.controllers.v1;
 
+import java.math.BigDecimal;
+import java.util.Date;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -82,19 +84,22 @@ public class GatewayController {
             return ResponseEntity.ok(response.getBody());
 
         } catch (HttpClientErrorException e) {
-            // Covers 4xx errors from Keycloak (bad creds, unauthorized, etc.)
             return ResponseEntity
                     .status(e.getStatusCode())
                     .body(Map.of("error", "Keycloak rejected login", "details", e.getResponseBodyAsString()));
         } catch (Exception e) {
-            // Any other unexpected error
+          
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Unexpected error during login", "details", e.getMessage()));
         }
     }
 
-@PostMapping("/signup")
+ @PostMapping("/signup")
+ @io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker(
+        name = "authService", 
+        fallbackMethod = "authServiceFallback"
+    )
 public ResponseEntity<ApiResponse> signup(@RequestBody SignupRequest signupRequest) {
     String keycloakUserId = null;
 
@@ -102,8 +107,9 @@ public ResponseEntity<ApiResponse> signup(@RequestBody SignupRequest signupReque
 
         keycloakUserId = userAuthSignupService.createUser(signupRequest);
 
- 
+        System.out.println("STARTING TO HIT AUTH CLIENT");
         UserModel authResponse = authClient.createUser(signupRequest);
+
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new ApiResponse("User registered successfully", authResponse));
@@ -113,6 +119,7 @@ public ResponseEntity<ApiResponse> signup(@RequestBody SignupRequest signupReque
                 .body(new ApiResponse("Failed to create user in Keycloak: " + e.getMessage(), null));
 
     } catch (Exception e) {
+        System.out.println("Error in Gateway: "+e.getMessage());
         return handleRegistrationFailure(keycloakUserId, e);
     }
 }
@@ -128,11 +135,30 @@ private ResponseEntity<ApiResponse> handleRegistrationFailure(String keycloakUse
         }
     }
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .body(new ApiResponse("User registration failed: " + ex.getMessage(), null));
+            .body(new ApiResponse("User registration failed: " + ex.getMessage()+ex.toString(), null));
 }
 
  
 
+
+
+   
+public UserModel authServiceFallback(SignupRequest signupRequest, Throwable t) {
+     UserModel fallbackUser = new UserModel();
+    fallbackUser.setId(null);
+    fallbackUser.setName("Unknown User");
+    fallbackUser.setEmail(signupRequest.getEmail());
+    fallbackUser.setAge(0);
+    fallbackUser.setProfilePicture(null);
+    fallbackUser.setBio("Service unavailable, fallback user returned");
+    fallbackUser.setGender(null);
+    fallbackUser.setBalance(BigDecimal.ZERO);
+    fallbackUser.setAddress(null);
+    fallbackUser.setRole(null);
+    fallbackUser.setCreated(new Date());
+    fallbackUser.setUpdated(new Date());
+    return fallbackUser;
+}
 
 }
 

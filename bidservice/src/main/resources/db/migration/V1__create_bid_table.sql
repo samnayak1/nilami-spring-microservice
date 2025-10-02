@@ -1,0 +1,8 @@
+CREATE TABLE bids (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    item_id UUID NOT NULL,
+    creator_id UUID NOT NULL,
+    price NUMERIC(19,2) NOT NULL
+);

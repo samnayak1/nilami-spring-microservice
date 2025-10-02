@@ -11,12 +11,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.nilami.catalogservice.controllers.requestTypes.CreateItemRequestType;
+import com.nilami.catalogservice.dto.ItemDTO;
 import com.nilami.catalogservice.models.Category;
 import com.nilami.catalogservice.models.Item;
 import com.nilami.catalogservice.repositories.CategoryRepository;
 import com.nilami.catalogservice.repositories.ItemRepository;
 import com.nilami.catalogservice.services.serviceAbstractions.ItemService;
-import com.nilami.dto.ItemDTO;
 
 import lombok.RequiredArgsConstructor;
 

@@ -21,10 +21,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 
 import com.nilami.catalogservice.controllers.requestTypes.CategoryRequest;
+import com.nilami.catalogservice.dto.CategoryDTO;
 import com.nilami.catalogservice.models.Category;
 import com.nilami.catalogservice.repositories.CategoryRepository;
 import com.nilami.catalogservice.services.serviceImplementations.CategoryServiceImpl;
-import com.nilami.dto.CategoryDTO;
 
 @ExtendWith(MockitoExtension.class)
 public class CategoryServiceTest {

@@ -11,6 +11,7 @@ import org.hibernate.annotations.UuidGenerator;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -25,6 +26,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Entity
 @Builder
+@Table(name = "bids")
 public class Bid {
   @Id
   @UuidGenerator
@@ -36,16 +38,13 @@ public class Bid {
   @UpdateTimestamp
   private Date updated;
 
-
-  @Column
+  @Column(nullable = false)
   private String itemId;
 
-  @Column
+  @Column(nullable = false)
   private String creatorId;
 
-  @Column
+  @Column(nullable = false)
   private BigDecimal price;
-
-
 
 }

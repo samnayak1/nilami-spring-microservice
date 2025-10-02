@@ -4,7 +4,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import com.nilami.catalogservice.controllers.requestTypes.CategoryRequest;
-import com.nilami.dto.CategoryDTO;
+import com.nilami.catalogservice.dto.CategoryDTO;
 
 public interface CategoryService {
    CategoryDTO getCategory(String categoryId);

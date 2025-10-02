@@ -14,6 +14,7 @@ import com.nilami.authservice.services.UserSignupService;
 
 @Service
 public class UserSignupServiceImplementation implements UserSignupService{
+ 
 
 
   private UserRepository userRepository;
@@ -24,25 +25,31 @@ public class UserSignupServiceImplementation implements UserSignupService{
    }
   
 
-   public String signupUser(SignupRequest request){
-
+public String signupUser(SignupRequest request) {
+    try {
         if (userRepository.existsByEmail(request.getEmail())) {
+            System.out.println("ERROR WHILE SIGNING UP: Duplicate email for"+request.getEmail());
             throw new UserAlreadyExistsException("User already exists.");
         }
 
         UserModel user = new UserModel();
         user.setName(request.getName());
         user.setEmail(request.getEmail());
-
         user.setAge(request.getAge());
         user.setGender(request.getGender());
         user.setAddress(request.getAddress());
         user.setRole(Roles.CUSTOMER);
 
-        UserModel savedUser=userRepository.save(user);
+        UserModel savedUser = userRepository.save(user);
         return savedUser.getId().toString();
 
-   }
+    } catch (UserAlreadyExistsException e) {
+        throw e;
+    } catch (Exception e) {
+      System.out.println("ERROR WHILE SIGNING UP: Exception for:"+request.getEmail()+" error: "+e.getMessage());
+        throw new RuntimeException("Error occurred during user signup", e);
+    }
+}
     
 
 }

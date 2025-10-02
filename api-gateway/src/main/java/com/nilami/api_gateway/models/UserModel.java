@@ -7,9 +7,13 @@ import java.util.UUID;
 import com.nilami.api_gateway.controllers.requestTypes.Gender;
 
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 
 
 @Getter
+@RequiredArgsConstructor
+@Setter
 public class UserModel {
  
     private UUID id;

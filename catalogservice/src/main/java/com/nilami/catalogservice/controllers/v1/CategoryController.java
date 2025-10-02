@@ -11,8 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.nilami.catalogservice.controllers.requestTypes.CategoryRequest;
+import com.nilami.catalogservice.dto.CategoryDTO;
 import com.nilami.catalogservice.services.serviceImplementations.CategoryServiceImpl;
-import com.nilami.dto.CategoryDTO;
 
 @RestController
 @RequestMapping("/api/v1/categories")

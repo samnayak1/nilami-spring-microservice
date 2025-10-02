@@ -1,4 +1,4 @@
-package com.nilami.dto;
+package com.nilami.catalogservice.dto;
 
 
 import lombok.AllArgsConstructor;

@@ -28,12 +28,12 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
 import com.nilami.catalogservice.controllers.requestTypes.CreateItemRequestType;
+import com.nilami.catalogservice.dto.ItemDTO;
 import com.nilami.catalogservice.models.Category;
 import com.nilami.catalogservice.models.Item;
 import com.nilami.catalogservice.repositories.CategoryRepository;
 import com.nilami.catalogservice.repositories.ItemRepository;
 import com.nilami.catalogservice.services.serviceImplementations.ItemServiceImpl;
-import com.nilami.dto.ItemDTO;
 
 @ExtendWith(MockitoExtension.class)
 public class ItemServiceTest {

@@ -4,7 +4,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import com.nilami.catalogservice.controllers.requestTypes.CreateItemRequestType;
-import com.nilami.dto.ItemDTO;
+import com.nilami.catalogservice.dto.ItemDTO;
 
 public interface ItemService{
     ItemDTO getItem(String itemId);
