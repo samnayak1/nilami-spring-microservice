@@ -8,7 +8,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 
 @SpringBootApplication
 @EnableDiscoveryClient
-@EnableFeignClients(basePackages = "com.nilami.api_gateway.services.externalClients")
+@EnableFeignClients
 public class ApiGatewayApplication {
 
 	public static void main(String[] args) {

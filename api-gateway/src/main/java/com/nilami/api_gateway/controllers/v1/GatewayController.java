@@ -23,6 +23,7 @@ import org.springframework.web.client.RestTemplate;
 
 import com.nilami.api_gateway.configs.KeycloakClientProperties;
 import com.nilami.api_gateway.controllers.requestTypes.LoginRequest;
+import com.nilami.api_gateway.controllers.requestTypes.RefreshTokenRequest;
 import com.nilami.api_gateway.controllers.requestTypes.SignupRequest;
 import com.nilami.api_gateway.dto.ApiResponse;
 import com.nilami.api_gateway.exceptions.KeycloakClientError;
@@ -108,11 +109,11 @@ public ResponseEntity<ApiResponse> signup(@RequestBody SignupRequest signupReque
         keycloakUserId = userAuthSignupService.createUser(signupRequest);
 
         System.out.println("STARTING TO HIT AUTH CLIENT");
-        UserModel authResponse = authClient.createUser(signupRequest);
+        ApiResponse authResponse = authClient.createUser(signupRequest);
 
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new ApiResponse("User registered successfully", authResponse));
+                .body(new ApiResponse("User registered successfully", authResponse.getData()));
 
     } catch (KeycloakClientError e) {
         return ResponseEntity.badRequest()
@@ -124,7 +125,42 @@ public ResponseEntity<ApiResponse> signup(@RequestBody SignupRequest signupReque
     }
 }
 
+@SuppressWarnings("rawtypes")
+@PostMapping("/refresh")
+public ResponseEntity<?> refreshToken(@RequestBody RefreshTokenRequest requestBody) {
+    try {
+        String refreshToken = requestBody.getRefreshToken();
+        if (refreshToken == null || refreshToken.isBlank()) {
+            return ResponseEntity.badRequest().body(new ApiResponse("Refresh token not present", refreshToken));
+        }
 
+        String tokenUrl = keycloakRealm + "/protocol/openid-connect/token";
+
+        MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
+        form.add("client_id", clientProps.getClientId());
+        form.add("client_secret", clientProps.getClientSecret());
+        form.add("grant_type", "refresh_token");
+        form.add("refresh_token", refreshToken);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(form, headers);
+
+        ResponseEntity<Map> response = restTemplate.postForEntity(tokenUrl, request, Map.class);
+        return ResponseEntity.ok(response.getBody());
+
+    } catch (HttpClientErrorException e) {
+        return ResponseEntity
+                .status(e.getStatusCode())
+                .body(Map.of("error", "Keycloak rejected refresh", "details", e.getResponseBodyAsString()));
+    } catch (Exception e) {
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Unexpected error during refresh", "details", e.getMessage()));
+    }
+}
+    
 private ResponseEntity<ApiResponse> handleRegistrationFailure(String keycloakUserId, Exception ex) {
     if (keycloakUserId != null) {
         try {

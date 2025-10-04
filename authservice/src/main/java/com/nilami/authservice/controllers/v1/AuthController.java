@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.nilami.authservice.controllers.requestTypes.SignupRequest;
 import com.nilami.authservice.dto.ApiResponse;
+import com.nilami.authservice.models.UserModel;
 import com.nilami.authservice.services.UserSignupService;
 
 @RestController
@@ -30,8 +31,8 @@ public class AuthController {
     @PostMapping("/signup")
     public ResponseEntity<ApiResponse> signup(@RequestBody SignupRequest request) {
         try {
-            String savedUserId = userSignupService.signupUser(request);
-            ApiResponse response = new ApiResponse("User registered successfully", savedUserId);
+            UserModel savedUser = userSignupService.signupUser(request);
+            ApiResponse response = new ApiResponse("User registered successfully", savedUser);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException ex) {
 

@@ -25,7 +25,7 @@ public class UserSignupServiceImplementation implements UserSignupService{
    }
   
 
-public String signupUser(SignupRequest request) {
+public UserModel signupUser(SignupRequest request) {
     try {
         if (userRepository.existsByEmail(request.getEmail())) {
             System.out.println("ERROR WHILE SIGNING UP: Duplicate email for"+request.getEmail());
@@ -41,7 +41,9 @@ public String signupUser(SignupRequest request) {
         user.setRole(Roles.CUSTOMER);
 
         UserModel savedUser = userRepository.save(user);
-        return savedUser.getId().toString();
+        System.out.println("User saved: "+savedUser.getName()+savedUser.getId());
+
+        return savedUser;
 
     } catch (UserAlreadyExistsException e) {
         throw e;
