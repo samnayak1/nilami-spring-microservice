@@ -2,6 +2,8 @@ package com.nilami.authservice.services.implementations;
 
 
 
+import java.util.UUID;
+
 import org.springframework.stereotype.Service;
 
 import com.nilami.authservice.controllers.requestTypes.SignupRequest;
@@ -33,6 +35,7 @@ public UserModel signupUser(SignupRequest request) {
         }
 
         UserModel user = new UserModel();
+        user.setId(UUID.fromString(request.getId()));
         user.setName(request.getName());
         user.setEmail(request.getEmail());
         user.setAge(request.getAge());

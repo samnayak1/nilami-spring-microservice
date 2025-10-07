@@ -11,9 +11,9 @@ import lombok.Getter;
 public class SignupRequest {
     private String name;
     private String email;
-    private String password;
     private int age;
     private Gender gender;
     private String address;
+    private String id;
 }
 
