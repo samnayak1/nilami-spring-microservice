@@ -2,8 +2,10 @@ package com.nilami.api_gateway.controllers.requestTypes;
 
 
 import lombok.Getter;
+import lombok.Setter;
 
 @Getter
+@Setter
 public class SignupRequest {
 
     private String name;
@@ -12,5 +14,6 @@ public class SignupRequest {
     private int age;
     private Gender gender;
     private String address;
+    private String id;   
 
 }

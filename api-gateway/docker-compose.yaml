@@ -6,9 +6,6 @@ services:
       - .env
     depends_on:
       - keycloak
-        
-        
-
     ports:
       - "8084:8084"  
     networks:

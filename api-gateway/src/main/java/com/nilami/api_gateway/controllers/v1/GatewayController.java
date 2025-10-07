@@ -72,7 +72,7 @@ public class GatewayController {
             form.add("client_id", clientProps.getClientId());
             form.add("client_secret", clientProps.getClientSecret());
             form.add("grant_type", "password");
-            form.add("username", loginRequest.getUserName());
+            form.add("username", loginRequest.getEmail());
             form.add("password", loginRequest.getPassword());
 
             HttpHeaders headers = new HttpHeaders();
@@ -107,7 +107,8 @@ public ResponseEntity<ApiResponse> signup(@RequestBody SignupRequest signupReque
     try {
 
         keycloakUserId = userAuthSignupService.createUser(signupRequest);
-
+        signupRequest.setId(keycloakUserId);
+        
         System.out.println("STARTING TO HIT AUTH CLIENT");
         ApiResponse authResponse = authClient.createUser(signupRequest);
 
