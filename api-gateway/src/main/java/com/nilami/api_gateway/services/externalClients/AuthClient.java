@@ -17,4 +17,6 @@ public interface AuthClient {
 
     @PostMapping("/api/v1/auth/signup")
     ApiResponse createUser(@RequestBody SignupRequest signupRequest);
+
+    
 }

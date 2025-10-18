@@ -1,5 +1,8 @@
 package com.nilami.authservice.dto;
 
+import lombok.Builder;
+
+@Builder
 public class ApiResponse {
     private String message;
     private Object data;

@@ -16,6 +16,7 @@ import com.nilami.catalogservice.models.Category;
 import com.nilami.catalogservice.models.Item;
 import com.nilami.catalogservice.repositories.CategoryRepository;
 import com.nilami.catalogservice.repositories.ItemRepository;
+import com.nilami.catalogservice.services.serviceAbstractions.FileUploadService;
 import com.nilami.catalogservice.services.serviceAbstractions.ItemService;
 
 import lombok.RequiredArgsConstructor;
@@ -25,17 +26,19 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class ItemServiceImpl implements ItemService {
-
+     
     private final ItemRepository itemRepository;
 
     private final CategoryRepository categoryRepository;
+
+    private final FileUploadService fileService;
 
     @Override
     public ItemDTO getItem(String itemId) {
         UUID itemIdInUUID=UUID.fromString(itemId);
         Item item = itemRepository.findById(itemIdInUUID)
                 .orElseThrow(() -> new RuntimeException("Item not found"));
-        return ItemDTO.toItemDTO(item);
+        return ItemDTO.toItemDTO(item,fileService);
     }
 
     @Override
@@ -43,7 +46,7 @@ public class ItemServiceImpl implements ItemService {
         Page<Item> itemsPage = itemRepository.findAll(pageable);
         List<ItemDTO> dtoList = itemsPage.getContent()
                 .stream()
-                .map(ItemDTO::toItemDTO)
+                .map((item)->ItemDTO.toItemDTO(item,fileService))
                 .collect(Collectors.toList());
         return new PageImpl<>(dtoList, pageable, itemsPage.getTotalElements());
     }
@@ -57,7 +60,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public ItemDTO createItem(CreateItemRequestType request) {
+    public ItemDTO createItem(CreateItemRequestType request,String userId) {
          UUID categoryIdInUUID=UUID.fromString(request.getCategoryId());
         Category category=categoryRepository.findById(categoryIdInUUID)
             .orElseThrow(() -> new RuntimeException("Category not found"));
@@ -68,14 +71,14 @@ public class ItemServiceImpl implements ItemService {
                 .description(request.getDescription())
                 .basePrice(request.getBasePrice())
                 .brand(request.getBrand())
-                .creatorUserId(request.getCreatorUserId())
+                .creatorUserId(userId)
                 .category(category)
                 .pictureIds(request.getPictureIds())
                 .expiryTime(request.getExpiryTime())
                 .build();
 
         Item savedItem = itemRepository.save(item);
-        return ItemDTO.toItemDTO(savedItem);
+        return ItemDTO.toItemDTO(savedItem,fileService);
     }
 
     @Override
@@ -85,7 +88,7 @@ public class ItemServiceImpl implements ItemService {
 
         List<ItemDTO> dtoList = itemsPage.getContent()
                 .stream()
-                .map(ItemDTO::toItemDTO)
+                .map((item)->ItemDTO.toItemDTO(item,fileService))
                 .collect(Collectors.toList());
 
         return new PageImpl<>(dtoList, pageable, itemsPage.getTotalElements());

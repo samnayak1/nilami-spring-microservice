@@ -21,6 +21,7 @@ import java.util.Optional;
 @Component
 public class KeycloakForwardHeaderFilter extends OncePerRequestFilter {
 
+  
     @SuppressWarnings("null")
     @Override
     protected void doFilterInternal(HttpServletRequest request,

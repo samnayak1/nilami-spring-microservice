@@ -22,7 +22,9 @@ public class ItemController {
     private final ItemService itemService;
 
     @GetMapping("/{id}")
-    public ResponseEntity<ItemDTO> getItem(@PathVariable String id) {
+    public ResponseEntity<ItemDTO> getItem
+                               (@PathVariable String id) {
+
         return ResponseEntity.ok(itemService.getItem(id));
     }
 
@@ -37,8 +39,11 @@ public class ItemController {
     }
 
     @PostMapping
-    public ResponseEntity<ItemDTO> createItem(@RequestBody CreateItemRequestType request) {
-        ItemDTO response = itemService.createItem(request);
+    public ResponseEntity<ItemDTO> createItem(
+        @RequestBody CreateItemRequestType request,
+         @RequestHeader("X-User-Id") String userId) {
+        
+        ItemDTO response = itemService.createItem(request,userId);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 

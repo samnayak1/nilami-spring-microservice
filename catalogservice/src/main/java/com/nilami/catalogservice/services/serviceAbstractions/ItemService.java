@@ -13,7 +13,7 @@ public interface ItemService{
 
     boolean checkIfExpiryDatePassed(String itemId);
 
-    ItemDTO createItem(CreateItemRequestType request);
+    ItemDTO createItem(CreateItemRequestType request,String userId);
 
     Page<ItemDTO> searchItem(String keyword, Pageable pageable);
 

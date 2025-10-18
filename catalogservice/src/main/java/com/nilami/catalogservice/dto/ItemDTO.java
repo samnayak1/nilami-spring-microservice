@@ -8,12 +8,17 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.net.URL;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
+
+
 
 import com.nilami.catalogservice.models.Item;
+import com.nilami.catalogservice.services.serviceAbstractions.FileUploadService;
 
 @Getter
 @Setter
@@ -21,6 +26,7 @@ import com.nilami.catalogservice.models.Item;
 @AllArgsConstructor
 @Builder
 public class ItemDTO {
+
 
     private UUID id;
 
@@ -46,7 +52,7 @@ public class ItemDTO {
 
     private boolean deleted;
 
-    public static ItemDTO toItemDTO(Item item) {
+    public static ItemDTO toItemDTO(Item item,FileUploadService fileService) {
         return ItemDTO.builder()
                 .id(item.getId())
                 .title(item.getTitle())
@@ -54,7 +60,10 @@ public class ItemDTO {
                 .basePrice(item.getBasePrice())
                 .brand(item.getBrand())
                 .creatorUserId(item.getCreatorUserId())
-                .pictureIds(item.getPictureIds())
+                .pictureIds(item.getPictureIds().stream()
+                        .map(fileService::generateDownloadPresignedUrl) // Map each picture key to a presigned URL
+                        .map(URL::toString) // Convert URL to String if needed
+                        .collect(Collectors.toList()))
                 .categoryId(item.getCategory() != null ? item.getCategory().getId() : null)
                 .expiryTime(item.getExpiryTime())
                 .createdAt(item.getCreatedAt())

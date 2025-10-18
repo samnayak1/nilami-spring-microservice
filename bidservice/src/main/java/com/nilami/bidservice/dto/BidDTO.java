@@ -1,9 +1,12 @@
 package com.nilami.bidservice.dto;
 
 import java.math.BigDecimal;
+
 import java.util.Date;
 
+
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -12,6 +15,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @EqualsAndHashCode
+@Builder
 public class BidDTO {
        private String id;
 
@@ -27,4 +31,4 @@ public class BidDTO {
 
        private BigDecimal price;
 
-}
+   }

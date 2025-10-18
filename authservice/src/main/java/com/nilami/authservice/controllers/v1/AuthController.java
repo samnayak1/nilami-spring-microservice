@@ -6,11 +6,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+
 import org.springframework.web.bind.annotation.RestController;
 
 import com.nilami.authservice.controllers.requestTypes.SignupRequest;
 import com.nilami.authservice.dto.ApiResponse;
+
 import com.nilami.authservice.models.UserModel;
+
 import com.nilami.authservice.services.UserSignupService;
 
 @RestController
@@ -19,8 +22,11 @@ public class AuthController {
 
     private final UserSignupService userSignupService;
 
+
+
     public AuthController(UserSignupService userSignupService) {
         this.userSignupService = userSignupService;
+   
     }
 
     @GetMapping("/test")
@@ -28,6 +34,7 @@ public class AuthController {
         return ResponseEntity.ok("Hello");
     }
 
+    
     @PostMapping("/signup")
     public ResponseEntity<ApiResponse> signup(@RequestBody SignupRequest request) {
         try {
@@ -44,4 +51,7 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
+
+  
+
 }
