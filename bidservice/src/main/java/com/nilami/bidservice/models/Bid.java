@@ -1,7 +1,8 @@
 package com.nilami.bidservice.models;
 
 import java.math.BigDecimal;
-import java.util.Date;
+import java.time.Instant;
+
 import java.util.UUID;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -33,10 +34,10 @@ public class Bid {
   private UUID id;
 
   @CreationTimestamp
-  private Date created;
+  private Instant created;
 
   @UpdateTimestamp
-  private Date updated;
+  private Instant updated;
 
   @Column(nullable = false)
   private String itemId;

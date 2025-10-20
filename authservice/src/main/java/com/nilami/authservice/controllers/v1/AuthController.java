@@ -36,21 +36,23 @@ public class AuthController {
 
     
     @PostMapping("/signup")
-    public ResponseEntity<ApiResponse> signup(@RequestBody SignupRequest request) {
+    public ResponseEntity<ApiResponse<UserModel>> signup(@RequestBody SignupRequest request) {
         try {
             UserModel savedUser = userSignupService.signupUser(request);
-            ApiResponse response = new ApiResponse("User registered successfully", savedUser);
+            ApiResponse<UserModel> response = new ApiResponse<UserModel>(true,"User registered successfully", savedUser);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException ex) {
 
-            ApiResponse response = new ApiResponse("Invalid request: " + ex.getMessage(), null);
+            ApiResponse<UserModel> response = new ApiResponse<UserModel>(false,"Invalid request: " + ex.getMessage(), null);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         } catch (Exception ex) {
 
-            ApiResponse response = new ApiResponse("An error occurred: " + ex.getMessage() + ex, null);
+            ApiResponse<UserModel> response = new ApiResponse<UserModel>(false,"An error occurred: " + ex.getMessage() + ex, null);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
+
+    
 
   
 

@@ -2,7 +2,7 @@ package com.nilami.authservice.services.implementations;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.Date;
+
 import java.util.Optional;
 import java.util.UUID;
 
@@ -33,7 +33,7 @@ public class BalanceServiceImplementation implements BalanceService {
     @Transactional
     public BalanceReservationResponse reserveBalance(BalanceReservationRequest request) {
 
-        // Check for idempotency - if this request was already processed
+        
         Optional<BalanceReservation> existingReservation = reservationRepository
                 .findByIdempotentKey(request.getIdempotentKey());
 
@@ -42,7 +42,7 @@ public class BalanceServiceImplementation implements BalanceService {
 
             return convertToResponse(reservation);
         }
-
+        //lock this row becase when the user tries to bid two items at once, the user's data should not be stale
         UserModel user = userRepository.findByIdWithLock(UUID.fromString(request.getUserId()))
                 .orElseThrow(() -> new UserDoesNotExistException("User not found: " + request.getUserId()));
 
@@ -83,11 +83,12 @@ public class BalanceServiceImplementation implements BalanceService {
         }
 
         // Check if reservation has expired
-        if (reservation.getExpiresAt().before(Date.from(Instant.now()))) {
+        if (reservation.getExpiresAt().isBefore(Instant.now())) {
             throw new IllegalStateException("Reservation has expired");
         }
 
-        // Lock the user row
+        // Lock the user row. This is to ensure that, let's say the person 
+        // bids two different items at the same time which it should not happen
         UserModel user = userRepository.findByIdWithLock(reservation.getUserId())
                 .orElseThrow(() -> new UserDoesNotExistException(
                         "User not found: " + reservation.getUserId()));

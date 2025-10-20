@@ -3,6 +3,7 @@ package com.nilami.catalogservice.controllers.v1;
 import java.net.URL;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,6 +23,7 @@ public class FileUploadController {
     private FileUploadService fileUploadService;
 
     @PutMapping("/presigned-url")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> generatePresignedUrl(
             @RequestBody GetPresignedUrlRequest requestBody) {
         try {

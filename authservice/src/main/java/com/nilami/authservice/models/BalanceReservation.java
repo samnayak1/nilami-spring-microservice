@@ -3,7 +3,7 @@ package com.nilami.authservice.models;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-import java.util.Date;
+
 import java.util.UUID;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -51,19 +51,19 @@ public class BalanceReservation {
     
     @Column(name = "created_at", nullable = false, updatable = false)
     @CreationTimestamp
-    private Date createdAt;
+    private Instant createdAt;
     
     @Column(name = "expires_at", nullable = false)
-    private Date expiresAt;
+    private Instant expiresAt;
     
     @Column(name = "updated_at")
     @UpdateTimestamp
-    private Date updatedAt;
+    private Instant updatedAt;
     
     @PrePersist
     protected void onCreate() {
         // 5 minute expiry. 
-        expiresAt = Date.from(Instant.now().plusSeconds(60*5));
+        expiresAt = Instant.now().plusSeconds(60*5);
     }
     
 

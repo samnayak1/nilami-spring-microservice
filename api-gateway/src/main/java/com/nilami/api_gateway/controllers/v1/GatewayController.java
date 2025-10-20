@@ -101,7 +101,7 @@ public class GatewayController {
         name = "authService", 
         fallbackMethod = "authServiceFallback"
     )
-public ResponseEntity<ApiResponse> signup(@RequestBody SignupRequest signupRequest) {
+public ResponseEntity<ApiResponse<UserModel>> signup(@RequestBody SignupRequest signupRequest) {
     String keycloakUserId = null;
 
     try {
@@ -110,15 +110,15 @@ public ResponseEntity<ApiResponse> signup(@RequestBody SignupRequest signupReque
         signupRequest.setId(keycloakUserId);
         
         System.out.println("STARTING TO HIT AUTH CLIENT");
-        ApiResponse authResponse = authClient.createUser(signupRequest);
+        ApiResponse<UserModel> authResponse = authClient.createUser(signupRequest);
 
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new ApiResponse("User registered successfully", authResponse.getData()));
+                .body(new ApiResponse<UserModel>(true,"User registered successfully", authResponse.getData()));
 
     } catch (KeycloakClientError e) {
         return ResponseEntity.badRequest()
-                .body(new ApiResponse("Failed to create user in Keycloak: " + e.getMessage(), null));
+                .body(new ApiResponse<UserModel>(false,"Failed to create user in Keycloak: " + e.getMessage(), null));
 
     } catch (Exception e) {
         System.out.println("Error in Gateway: "+e.getMessage());
@@ -132,7 +132,7 @@ public ResponseEntity<?> refreshToken(@RequestBody RefreshTokenRequest requestBo
     try {
         String refreshToken = requestBody.getRefreshToken();
         if (refreshToken == null || refreshToken.isBlank()) {
-            return ResponseEntity.badRequest().body(new ApiResponse("Refresh token not present", refreshToken));
+            return ResponseEntity.badRequest().body(new ApiResponse<String>(false,"Refresh token not present", refreshToken));
         }
 
         String tokenUrl = keycloakRealm + "/protocol/openid-connect/token";
@@ -162,7 +162,7 @@ public ResponseEntity<?> refreshToken(@RequestBody RefreshTokenRequest requestBo
     }
 }
     
-private ResponseEntity<ApiResponse> handleRegistrationFailure(String keycloakUserId, Exception ex) {
+private ResponseEntity<ApiResponse<UserModel>> handleRegistrationFailure(String keycloakUserId, Exception ex) {
     if (keycloakUserId != null) {
         try {
             userAuthSignupService.deleteUser(keycloakUserId);
@@ -172,7 +172,7 @@ private ResponseEntity<ApiResponse> handleRegistrationFailure(String keycloakUse
         }
     }
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .body(new ApiResponse("User registration failed: " + ex.getMessage()+ex.toString(), null));
+            .body(new ApiResponse<UserModel>(false,"User registration failed: " + ex.getMessage()+ex.toString(), null));
 }
 
  

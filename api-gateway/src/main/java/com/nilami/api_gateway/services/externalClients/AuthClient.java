@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import com.nilami.api_gateway.controllers.requestTypes.SignupRequest;
 import com.nilami.api_gateway.dto.ApiResponse;
+import com.nilami.api_gateway.models.UserModel;
 
 
 @FeignClient(
@@ -16,7 +17,7 @@ import com.nilami.api_gateway.dto.ApiResponse;
 public interface AuthClient {
 
     @PostMapping("/api/v1/auth/signup")
-    ApiResponse createUser(@RequestBody SignupRequest signupRequest);
+    ApiResponse<UserModel> createUser(@RequestBody SignupRequest signupRequest);
 
     
 }

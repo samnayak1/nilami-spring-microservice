@@ -1,5 +1,6 @@
 package com.nilami.bidservice.repositories;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -21,6 +22,8 @@ public interface BidRepository extends JpaRepository<Bid,UUID>{
      @Lock(LockModeType.PESSIMISTIC_READ)
      @NonNull
      Optional<Bid> findById(@NonNull UUID id);
+
+    List<Bid> findByItemIdOrderByCreatedAtDesc(UUID itemId);
 
 
 }

@@ -1,8 +1,8 @@
 package com.nilami.bidservice.dto;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
-import java.util.Date;
 
 
 import lombok.AllArgsConstructor;
@@ -19,7 +19,7 @@ import lombok.Setter;
 public class BidDTO {
        private String id;
 
-       private Date created;
+       private Instant created;
 
        private String itemId;
 
