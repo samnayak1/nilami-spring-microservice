@@ -22,6 +22,17 @@ public class ItemController {
 
     private final ItemService itemService;
 
+
+    @GetMapping("/test")
+    public ResponseEntity<String> testController(
+            @RequestHeader("X-User-Id") String userId,
+            @RequestHeader("X-User-Roles") String roles) {
+
+        System.out.println("roles: " + roles);
+        System.out.println("userId: " + userId);
+        return ResponseEntity.ok("Hello");
+    }
+    
     @GetMapping("/{id}")
     public ResponseEntity<ItemDTO> getItem(@PathVariable String id) {
         try {
@@ -32,8 +43,9 @@ public class ItemController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<ItemDTO>> getAllItems(Pageable pageable) {
+    public ResponseEntity<Page<ItemDTO>> getAllItems(Pageable pageable, @RequestHeader("X-User-Id") String userId) {
         try {
+            System.out.println("User: "+userId+" requested to get all items");
             return ResponseEntity.ok(itemService.getAllItems(pageable));
         } catch (Exception e) {
             throw new RuntimeException("Failed to retrieve items: " + e.getMessage(), e);

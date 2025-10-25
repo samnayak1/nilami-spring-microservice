@@ -73,11 +73,12 @@ public class Item {
     @Column(nullable = false)
     private Date expiryTime;
 
-
-    @CreationTimestamp
+  @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
     @UpdateTimestamp
+    @Column(name = "updated_at")
     private Instant updatedAt;
 
     @Column

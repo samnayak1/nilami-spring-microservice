@@ -2,6 +2,8 @@ package com.nilami.bidservice.services.externalClients;
 
 
 
+
+
 import org.springframework.cloud.openfeign.FeignClient;
 
 import org.springframework.web.bind.annotation.GetMapping;

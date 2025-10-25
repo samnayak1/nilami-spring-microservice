@@ -46,7 +46,8 @@ public class KeycloakForwardHeaderFilter extends OncePerRequestFilter {
             MutableHttpServletRequest mutableRequest = new MutableHttpServletRequest(request);
             mutableRequest.putHeader("X-User-Id", userId);
             mutableRequest.putHeader("X-User-Roles", roles);
-
+            System.out.println("userId: "+userId);
+            System.out.println("roles: "+roles);
             filterChain.doFilter(mutableRequest, response);
         } else {
             filterChain.doFilter(request, response);

@@ -9,7 +9,7 @@ import java.util.UUID;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.hibernate.annotations.UuidGenerator;
+
 
 @Entity
 @Getter
@@ -18,7 +18,6 @@ import org.hibernate.annotations.UuidGenerator;
 public class UserModel {
 
     @Id
-    @UuidGenerator
     private UUID id;
 
     @Column(nullable = false)
@@ -26,6 +25,9 @@ public class UserModel {
 
     @Column(unique = true, nullable = false)
     private String email;
+
+    @Version
+    private Long version;
 
     @Column
     private int age;

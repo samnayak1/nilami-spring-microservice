@@ -2,8 +2,7 @@ package com.nilami.bidservice.dto;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-
-
+import java.util.UUID;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,15 +16,15 @@ import lombok.Setter;
 @EqualsAndHashCode
 @Builder
 public class BidDTO {
-       private String id;
+       private UUID id;
 
        private Instant created;
 
-       private String itemId;
+       private UUID itemId;
 
        private String itemName;
 
-       private String creatorId;
+       private UUID creatorId;
 
        private String creatorName;
 

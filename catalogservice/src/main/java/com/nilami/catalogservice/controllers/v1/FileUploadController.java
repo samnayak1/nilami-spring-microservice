@@ -15,12 +15,12 @@ import com.nilami.catalogservice.services.serviceAbstractions.FileUploadService;
 
 import lombok.RequiredArgsConstructor;
 @RestController
-@RequestMapping("/api/v1/file")
+@RequestMapping("/api/v1/items/file")
 @RequiredArgsConstructor
 public class FileUploadController {
 
    
-    private FileUploadService fileUploadService;
+    private final FileUploadService fileUploadService;
 
     @PutMapping("/presigned-url")
     @PreAuthorize("hasRole('ADMIN')")

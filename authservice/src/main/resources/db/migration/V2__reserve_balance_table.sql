@@ -21,7 +21,7 @@ CREATE TABLE balance_reservations (
     status VARCHAR(50) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     expires_at TIMESTAMP NOT NULL,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_reservation_user 
         FOREIGN KEY (user_id) 
         REFERENCES users(id) 
@@ -29,7 +29,7 @@ CREATE TABLE balance_reservations (
     CONSTRAINT chk_amount_positive CHECK (amount > 0),
     CONSTRAINT chk_status_valid CHECK (
         status IN ('RESERVED', 'COMMITTED', 'CANCELLED', 'EXPIRED')
-    ),
+    )
 );
 
 CREATE INDEX idx_reservations_user_id ON balance_reservations(user_id);

@@ -18,9 +18,12 @@ public class SecurityConfig {
             throws Exception {
 
         http.csrf(AbstractHttpConfigurer::disable)
-            .authorizeHttpRequests(auth -> auth
-                    .anyRequest().authenticated()
-            )
+            .authorizeHttpRequests(authorize -> authorize
+            .requestMatchers(
+                "/api/v1/auth/signup"
+            ).permitAll()
+            .anyRequest().authenticated()
+        )
             .addFilterBefore(headerAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

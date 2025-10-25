@@ -81,10 +81,9 @@ public class BidServiceImplementation implements BidService {
             }
           reservationId = reservationResponse.getData().getReservationId();
             Bid placedBidEntity = Bid.builder()
-                    .itemId(itemId)
+                    .itemId(UUID.fromString(itemId))
                     .price(price)
-                    .creatorId(userId)
-        
+                    .creatorId(UUID.fromString(userId))
                     .build();
 
             Bid placedBid = bidRepository.save(placedBidEntity);
@@ -132,7 +131,7 @@ public class BidServiceImplementation implements BidService {
 
     @Override
     public List<Bid> getBidsOfItems(String itemId) {
-        List<Bid> bidsOfItem=bidRepository.findByItemIdOrderByCreatedAtDesc(UUID.fromString(itemId));
+        List<Bid> bidsOfItem=bidRepository.findByItemIdOrderByCreatedDesc(UUID.fromString(itemId));
     
         return bidsOfItem;
 
@@ -140,21 +139,21 @@ public class BidServiceImplementation implements BidService {
 
     public BidDTO convertToBidDTO(Bid bid) {
 
-        String userId = bid.getCreatorId();
+        UUID userId = bid.getCreatorId();
 
-        String itemId = bid.getItemId();
+        UUID itemId = bid.getItemId();
 
-        ApiResponse<UserDTO> userResponse = userClient.getUserDetails(userId);
+        ApiResponse<UserDTO> userResponse = userClient.getUserDetails(userId.toString());
 
         UserDTO user = (UserDTO) userResponse.getData();
 
         String userName = user.getName();
 
-        ItemDTO item = itemClient.getItem(itemId);
+        ItemDTO item = itemClient.getItem(itemId.toString());
 
         String itemName = item.getTitle();
 
-        return BidDTO.builder().id(bid.getId().toString())
+        return BidDTO.builder().id(bid.getId())
                 .itemId(itemId)
                 .itemName(itemName)
                 .created(bid.getCreated())

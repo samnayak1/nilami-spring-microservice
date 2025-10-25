@@ -34,16 +34,18 @@ public class Bid {
   private UUID id;
 
   @CreationTimestamp
+  @Column(name = "created_at", nullable = false, updatable = false)
   private Instant created;
 
   @UpdateTimestamp
+  @Column(name = "updated_at")
   private Instant updated;
 
   @Column(nullable = false)
-  private String itemId;
+  private UUID itemId;
 
   @Column(nullable = false)
-  private String creatorId;
+  private UUID creatorId;
 
   @Column(nullable = false)
   private BigDecimal price;

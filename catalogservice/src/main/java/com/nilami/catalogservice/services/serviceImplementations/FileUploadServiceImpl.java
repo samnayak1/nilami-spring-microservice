@@ -3,15 +3,14 @@ package com.nilami.catalogservice.services.serviceImplementations;
 import java.net.URL;
 import java.time.Duration;
 
-
 import org.springframework.stereotype.Service;
 
 import com.nilami.catalogservice.configs.AwsS3Properties;
 import com.nilami.catalogservice.services.serviceAbstractions.FileUploadService;
 
 import jakarta.annotation.PostConstruct;
-
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -25,18 +24,20 @@ import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequ
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class FileUploadServiceImpl implements FileUploadService {
 
     private S3Presigner presigner;
-
-  
-
+    
+   
     private final AwsS3Properties awsS3Properties;
-
-
 
     @PostConstruct
     public void init() {
+        log.info("FileUploadService initialized successfully");
+        log.info("AWS Region: {}", awsS3Properties.getRegion());
+        log.info("AWS Bucket: {}", awsS3Properties.getBucketName());
+        
         AwsBasicCredentials awsCreds = AwsBasicCredentials.create(
                 awsS3Properties.getAccessKey(),
                 awsS3Properties.getSecretKey()

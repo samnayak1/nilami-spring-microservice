@@ -30,7 +30,7 @@ public class ItemDTO {
 
     private String brand;
 
-    private String creatorUserId;
+    private UUID creatorUserId;
 
     private List<String> pictureIds;
 

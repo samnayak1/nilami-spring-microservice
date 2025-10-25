@@ -18,19 +18,19 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 public class CreateItemRequestType {
-     @NotBlank(message = "The description is required.")
+     @NotBlank(message = "The title is required.")
      private String title;
  @NotBlank(message = "The description is required.")
     private String description;
- @NotBlank(message = "The description is required.")
+ @NotBlank(message = "The base price is required.")
     private BigDecimal basePrice;
- @NotBlank(message = "The description is required.")
+ @NotBlank(message = "The brand is required.")
     private String brand;
 
-
+ @NotBlank(message = "Attach atleast one picture")
     private List<String> pictureIds;
-
+ @NotBlank(message = "category is required")
     private String categoryId;
-
+@NotBlank(message = "set an expiry time")
     private Date expiryTime;
 }

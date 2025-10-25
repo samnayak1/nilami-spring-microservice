@@ -31,13 +31,16 @@ import com.nilami.api_gateway.models.UserModel;
 import com.nilami.api_gateway.services.UserAuthSignupService;
 import com.nilami.api_gateway.services.externalClients.AuthClient;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
+
+
 
 @RestController
+@Slf4j
 @RequestMapping("/api/v1/gateway")
 public class GatewayController {
-    private static final Logger log = LoggerFactory.getLogger(GatewayController.class);
+
     private final RestTemplate restTemplate = new RestTemplate();
     private final KeycloakClientProperties clientProps;
     private UserAuthSignupService userAuthSignupService;
@@ -96,35 +99,52 @@ public class GatewayController {
         }
     }
 
- @PostMapping("/signup")
- @io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker(
-        name = "authService", 
-        fallbackMethod = "authServiceFallback"
+    @PostMapping("/signup")
+    @io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker(
+            name = "authService", 
+            fallbackMethod = "authServiceFallback"
     )
-public ResponseEntity<ApiResponse<UserModel>> signup(@RequestBody SignupRequest signupRequest) {
-    String keycloakUserId = null;
-
-    try {
-
-        keycloakUserId = userAuthSignupService.createUser(signupRequest);
-        signupRequest.setId(keycloakUserId);
+    public ResponseEntity<ApiResponse<UserModel>> signup(@Valid @RequestBody SignupRequest signupRequest) {
+        String keycloakUserId = null;
         
-        System.out.println("STARTING TO HIT AUTH CLIENT");
-        ApiResponse<UserModel> authResponse = authClient.createUser(signupRequest);
+        log.info("Starting user signup process for email: {}", signupRequest.getEmail());
+        log.debug("Signup request details - Name: {}, Age: {}, Gender: {}", 
+                  signupRequest.getName(), signupRequest.getAge(), signupRequest.getGender());
 
+        try {
+            // Create user in Keycloak
+            log.info("Attempting to create user in Keycloak for email: {}", signupRequest.getEmail());
+            keycloakUserId = userAuthSignupService.createUser(signupRequest);
+            log.info("Successfully created user in Keycloak with ID: {} for email: {}", 
+                     keycloakUserId, signupRequest.getEmail());
+            
+            signupRequest.setId(keycloakUserId);
+            
+            // Create user in Auth Service
+            log.info("Attempting to create user in Auth Service for Keycloak ID: {}", keycloakUserId);
+            ApiResponse<UserModel> authResponse = authClient.createUser(signupRequest);
+            log.info("Successfully created user in Auth Service for Keycloak ID: {}", keycloakUserId);
 
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new ApiResponse<UserModel>(true,"User registered successfully", authResponse.getData()));
+            log.info("User signup completed successfully for email: {} with Keycloak ID: {}", 
+                     signupRequest.getEmail(), keycloakUserId);
+            
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(new ApiResponse<>(true, "User registered successfully", authResponse.getData()));
 
-    } catch (KeycloakClientError e) {
-        return ResponseEntity.badRequest()
-                .body(new ApiResponse<UserModel>(false,"Failed to create user in Keycloak: " + e.getMessage(), null));
+        } catch (KeycloakClientError e) {
+            log.error("Keycloak user creation failed for email: {}. Error: {}", 
+                      signupRequest.getEmail(), e.getMessage(), e);
+            
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse<>(false, "Failed to create user in Keycloak: " + e.getMessage(), null));
 
-    } catch (Exception e) {
-        System.out.println("Error in Gateway: "+e.getMessage());
-        return handleRegistrationFailure(keycloakUserId, e);
+        } catch (Exception e) {
+            log.error("Unexpected error during signup for email: {}. Keycloak ID: {}. Error: {}", 
+                      signupRequest.getEmail(), keycloakUserId, e.getMessage(), e);
+            
+            return handleRegistrationFailure(keycloakUserId, e);
+        }
     }
-}
 
 @SuppressWarnings("rawtypes")
 @PostMapping("/refresh")
