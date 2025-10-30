@@ -123,7 +123,7 @@ public class ItemServiceTest {
                 .basePrice(BigDecimal.valueOf(800))
                 .brand("Samsung")
     
-                .pictureIds(List.of("pic3", "pic4"))
+              //  .pictureIds(List.of("pic3", "pic4"))
                 .categoryId(category.getId().toString())
                 .expiryTime(new Date(System.currentTimeMillis() + 200000))
                 .build();
@@ -131,7 +131,7 @@ public class ItemServiceTest {
         when(categoryRepository.findById(category.getId())).thenReturn(Optional.of(category));
         when(itemRepository.save(any(Item.class))).thenReturn(item);
 
-        ItemDTO result = itemService.createItem(request,"user456");
+        Item result = itemService.createItem(request,"user456");
 
         assertNotNull(result);
         assertEquals("Laptop", result.getTitle()); // saved mock returns "item" object

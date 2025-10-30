@@ -2,6 +2,7 @@ package com.nilami.catalogservice.services.serviceImplementations;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import com.nilami.catalogservice.controllers.requestTypes.CreateItemRequestType;
 import com.nilami.catalogservice.dto.ItemDTO;
+import com.nilami.catalogservice.exceptions.ItemNotFoundException;
 import com.nilami.catalogservice.models.Category;
 import com.nilami.catalogservice.models.Item;
 import com.nilami.catalogservice.repositories.CategoryRepository;
@@ -19,14 +21,13 @@ import com.nilami.catalogservice.repositories.ItemRepository;
 import com.nilami.catalogservice.services.serviceAbstractions.FileUploadService;
 import com.nilami.catalogservice.services.serviceAbstractions.ItemService;
 
+import jakarta.ws.rs.ForbiddenException;
 import lombok.RequiredArgsConstructor;
 
-
-    
 @Service
 @RequiredArgsConstructor
 public class ItemServiceImpl implements ItemService {
-     
+
     private final ItemRepository itemRepository;
 
     private final CategoryRepository categoryRepository;
@@ -35,10 +36,10 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public ItemDTO getItem(String itemId) {
-        UUID itemIdInUUID=UUID.fromString(itemId);
+        UUID itemIdInUUID = UUID.fromString(itemId);
         Item item = itemRepository.findById(itemIdInUUID)
                 .orElseThrow(() -> new RuntimeException("Item not found"));
-        return ItemDTO.toItemDTO(item,fileService);
+        return ItemDTO.toItemDTO(item, fileService);
     }
 
     @Override
@@ -46,25 +47,24 @@ public class ItemServiceImpl implements ItemService {
         Page<Item> itemsPage = itemRepository.findAll(pageable);
         List<ItemDTO> dtoList = itemsPage.getContent()
                 .stream()
-                .map((item)->ItemDTO.toItemDTO(item,fileService))
+                .map((item) -> ItemDTO.toItemDTO(item, fileService))
                 .collect(Collectors.toList());
         return new PageImpl<>(dtoList, pageable, itemsPage.getTotalElements());
     }
 
     @Override
     public boolean checkIfExpiryDatePassed(String itemId) {
-         UUID itemIdInUUID=UUID.fromString(itemId);
+        UUID itemIdInUUID = UUID.fromString(itemId);
         Item item = itemRepository.findById(itemIdInUUID)
                 .orElseThrow(() -> new RuntimeException("Item not found"));
         return item.getExpiryTime().toInstant().isBefore(Instant.now());
     }
 
     @Override
-    public ItemDTO createItem(CreateItemRequestType request,String userId) {
-         UUID categoryIdInUUID=UUID.fromString(request.getCategoryId());
-        Category category=categoryRepository.findById(categoryIdInUUID)
-            .orElseThrow(() -> new RuntimeException("Category not found"));
-
+    public Item createItem(CreateItemRequestType request, String userId) {
+        UUID categoryIdInUUID = UUID.fromString(request.getCategoryId());
+        Category category = categoryRepository.findById(categoryIdInUUID)
+                .orElseThrow(() -> new RuntimeException("Category not found"));
 
         Item item = Item.builder()
                 .title(request.getTitle())
@@ -73,12 +73,32 @@ public class ItemServiceImpl implements ItemService {
                 .brand(request.getBrand())
                 .creatorUserId(userId)
                 .category(category)
-                .pictureIds(request.getPictureIds())
+                // .pictureIds(request.getPictureIds())
                 .expiryTime(request.getExpiryTime())
                 .build();
 
         Item savedItem = itemRepository.save(item);
-        return ItemDTO.toItemDTO(savedItem,fileService);
+        return savedItem;
+    }
+
+    @Override
+    public Boolean savePictureIdsForItem(String itemId, String userId, List<String> pictureIds) {
+        Optional<Item> itemDatabaseResponse = itemRepository.findById(UUID.fromString(itemId));
+        if (itemDatabaseResponse.isEmpty()) {
+            throw new ItemNotFoundException("Item: " + itemId + " not found");
+        }
+
+        Item item = itemDatabaseResponse.get();
+
+        if (!item.getCreatorUserId().equals(userId)) {
+            throw new ForbiddenException(userId + " not allowed to add pictures for this item");
+        }
+
+        item.setPictureIds(pictureIds);
+
+        itemRepository.save(item);
+
+        return true;
     }
 
     @Override
@@ -88,10 +108,9 @@ public class ItemServiceImpl implements ItemService {
 
         List<ItemDTO> dtoList = itemsPage.getContent()
                 .stream()
-                .map((item)->ItemDTO.toItemDTO(item,fileService))
+                .map((item) -> ItemDTO.toItemDTO(item, fileService))
                 .collect(Collectors.toList());
 
         return new PageImpl<>(dtoList, pageable, itemsPage.getTotalElements());
     }
 }
-

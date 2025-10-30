@@ -22,7 +22,7 @@ public class FeignHeaderForwardingConfig {
                 if (requestAttributes instanceof ServletRequestAttributes servletRequestAttributes) {
                     HttpServletRequest request = servletRequestAttributes.getRequest();
 
-                    // Extract your headers
+           
                     String userId = request.getHeader("X-User-Id");
                     String roles = request.getHeader("X-User-Roles");
 

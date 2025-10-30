@@ -2,7 +2,7 @@ package com.nilami.catalogservice.controllers.requestTypes;
 
 import java.math.BigDecimal;
 import java.util.Date;
-import java.util.List;
+
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -27,8 +27,8 @@ public class CreateItemRequestType {
  @NotBlank(message = "The brand is required.")
     private String brand;
 
- @NotBlank(message = "Attach atleast one picture")
-    private List<String> pictureIds;
+//  @NotBlank(message = "Attach atleast one picture")
+//     private List<String> pictureIds;
  @NotBlank(message = "category is required")
     private String categoryId;
 @NotBlank(message = "set an expiry time")
