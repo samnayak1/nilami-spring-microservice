@@ -17,7 +17,7 @@ import jakarta.persistence.LockModeType;
 @Repository
 public interface BidRepository extends JpaRepository<Bid,UUID>{
 
-    Optional<Bid> findTopByOrderByCreatedDesc();
+    Optional<Bid> findTopByItemIdOrderByCreatedDesc(@NonNull UUID itemId);
 
      @Lock(LockModeType.PESSIMISTIC_READ)
      @NonNull

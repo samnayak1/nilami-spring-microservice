@@ -26,7 +26,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class BidController {
 
-     private BidService bidService;
+     private final BidService bidService;
 
 
     @GetMapping("/test")

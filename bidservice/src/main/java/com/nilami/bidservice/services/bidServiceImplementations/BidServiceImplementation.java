@@ -25,28 +25,24 @@ import com.nilami.bidservice.services.externalClients.ItemClient;
 import com.nilami.bidservice.services.externalClients.UserClient;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @RequiredArgsConstructor
 @Service
+@Slf4j
 public class BidServiceImplementation implements BidService {
 
-    private BidRepository bidRepository;
+    private final BidRepository bidRepository;
 
-    private UserClient userClient;
+    private final UserClient userClient;
 
-    private ItemClient itemClient;
+    private final ItemClient itemClient;
 
-    @Override
-    public Optional<BidDTO> getLastBid(String itemId) {
-
-        Optional<Bid> lastBid = bidRepository.findTopByOrderByCreatedDesc();
-
-        if (lastBid.isEmpty()) {
-            return Optional.empty();
-        }
-
-        return Optional.of(convertToBidDTO(lastBid.get()));
-    }
+     @Override
+      public Optional<BidDTO> getLastBid(String itemId) {
+    return bidRepository.findTopByItemIdOrderByCreatedDesc(UUID.fromString(itemId))
+            .map(this::convertToBidDTO);
+}
 
     @Override
     public BidDTO placeBid(String itemId, BigDecimal price, String userId) throws Exception {
@@ -54,26 +50,30 @@ public class BidServiceImplementation implements BidService {
         try {
              String idempotentKey = UUID.randomUUID().toString();
             // check for last bid and that bid should not exceed previous bid
+            log.info("before getting last bid of item {} with price {} and userId",itemId,price,userId);
               Optional<BidDTO> lastBid = this.getLastBid(itemId);
+    
 
             if (lastBid.isPresent()) {
                 BigDecimal lastBidPrice = lastBid.get().getPrice();
+                log.info("price of the last bid {} for item {}",lastBidPrice,lastBid.get().getItemId());
                 if (price.compareTo(lastBidPrice) <= 0) {
                     throw new InvalidBidException("Bid price must be higher than the last bid: " + lastBidPrice);
                 }
             }
        
             Boolean isExpired = itemClient.checkExpiry(itemId);
-            
+            log.info("The expiry of the item {} is evaluated to {}",itemId,isExpired);
             if (isExpired == null || isExpired) {
                 throw new ItemExpiredException("Item " + itemId + " has expired. Bidding is closed.");
             }
-
+        //We first reserve a certain amount in our user's database
              BalanceReservationRequest reserveRequest = 
                 new BalanceReservationRequest(userId, price, idempotentKey);
 
             ApiResponse<BalanceReservationResponse> reservationResponse = 
                 userClient.reserveBalance(reserveRequest);
+             log.info("The balance reservation for itemId {} and for user {} for price {} is evaluated to {}",itemId,userId,reserveRequest.getAmount(),reservationResponse.getSuccess());
               if (!reservationResponse.getSuccess() || reservationResponse.getData() == null) {
                 throw new BidPlacementException(
                     "Failed to reserve balance: " + reservationResponse.getMessage()
@@ -87,10 +87,10 @@ public class BidServiceImplementation implements BidService {
                     .build();
 
             Bid placedBid = bidRepository.save(placedBidEntity);
-
+            log.info("bid placed for item: "+ placedBid.getItemId());
               ApiResponse<Void> commitResponse = 
                 userClient.commitBalanceReservation(reservationId);
-            
+             log.info("bid commited for item: "+ placedBid.getItemId()+"response evaluated to "+commitResponse.getSuccess());
             if (!commitResponse.getSuccess()) {
                
                 throw new BidPlacementException(
@@ -116,7 +116,7 @@ public class BidServiceImplementation implements BidService {
                     }
                 } catch (Exception rollbackException) {
                   
-                     System.out.println("ROLLBACK EXPECTION"+rollbackException.getMessage());
+                     log.error("ROLLBACK EXPECTION"+rollbackException.getMessage());
                     // TODO: make a kafka queue to send to customer support for manual intervention
                 }
             }
