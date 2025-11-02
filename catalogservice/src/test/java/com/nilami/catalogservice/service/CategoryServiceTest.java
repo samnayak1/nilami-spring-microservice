@@ -11,12 +11,12 @@ import static org.mockito.Mockito.when;
 import java.util.Optional;
 import java.util.UUID;
 
-import org.junit.jupiter.api.BeforeEach;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+
 import org.mockito.junit.jupiter.MockitoExtension;
 
 
@@ -35,22 +35,17 @@ public class CategoryServiceTest {
     @InjectMocks
     private CategoryServiceImpl categoryService;
 
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-    }
-
+  
       @Test
     void createCategory_ShouldSaveAndReturnDto() {
-        // Given
+
         CategoryRequest request = new CategoryRequest("Electronics", "All gadgets");
         UUID categoryId = UUID.randomUUID();
         Category savedCategory = new Category(categoryId, "Electronics", "All gadgets", null);
         
-        // When - mock the save method
+      
         when(categoryRepository.save(any(Category.class))).thenReturn(savedCategory);
-        
-        // Then - call the service method
+
         CategoryDTO response = categoryService.createCategory(request);
         
         // Assert
@@ -59,7 +54,7 @@ public class CategoryServiceTest {
         assertEquals("All gadgets", response.getDescription());
         assertEquals(categoryId, response.getId());
         
-        // Verify the interaction
+      
         verify(categoryRepository, times(1)).save(any(Category.class));
     }
 

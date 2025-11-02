@@ -1,7 +1,6 @@
 package com.nilami.authservice.controllers.v1;
 
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
@@ -16,7 +15,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.nilami.authservice.controllers.requestTypes.BalanceRequest;
 import com.nilami.authservice.controllers.requestTypes.BalanceReservationRequest;
-import com.nilami.authservice.controllers.requestTypes.GetMultipleUserDetailsRequest;
 import com.nilami.authservice.dto.ApiResponse;
 import com.nilami.authservice.dto.BalanceReservationResponse;
 import com.nilami.authservice.dto.UserDTO;
@@ -52,18 +50,7 @@ public class InternalDetailsAuthController {
 
     } 
 
-    @PostMapping("/many/details")
-public ResponseEntity<ApiResponse<List<UserDTO>>> getMutipleUserDetails(@RequestBody GetMultipleUserDetailsRequest request) {
-    try {
-        List<UserDTO> users = userService.getUsersDetailsByIds(request.getUserIds());
 
-        ApiResponse<List<UserDTO>> response = new ApiResponse<List<UserDTO>>(true,"Success", users);
-        return ResponseEntity.status(HttpStatus.OK).body(response);
-    } catch (Exception ex) {
-        ApiResponse<List<UserDTO>> response = new ApiResponse<List<UserDTO>>(false, "An error occurred: " + ex.getMessage(), null);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-    }
-}
 
    @PostMapping("/balance/subtract")
 public ResponseEntity<ApiResponse<Boolean>> subtractBankBalanceFromUser(

@@ -23,31 +23,37 @@ import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequ
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
+@RequiredArgsConstructor
 public class FileUploadServiceImpl implements FileUploadService {
 
-    private S3Presigner presigner;
-    
-   
-    private final AwsS3Properties awsS3Properties;
+     private final AwsS3Properties awsS3Properties;
+     private S3Presigner presigner; 
+
+ 
+    protected FileUploadServiceImpl(AwsS3Properties props, S3Presigner presigner) {
+        this.awsS3Properties = props;
+        this.presigner = presigner;
+    }
 
     @PostConstruct
     public void init() {
         log.info("FileUploadService initialized successfully");
         log.info("AWS Region: {}", awsS3Properties.getRegion());
         log.info("AWS Bucket: {}", awsS3Properties.getBucketName());
-        
-        AwsBasicCredentials awsCreds = AwsBasicCredentials.create(
+           if (this.presigner == null) {
+            AwsBasicCredentials awsCreds = AwsBasicCredentials.create(
                 awsS3Properties.getAccessKey(),
                 awsS3Properties.getSecretKey()
-        );
+            );
 
-        this.presigner = S3Presigner.builder()
+            this.presigner = S3Presigner.builder()
                 .credentialsProvider(StaticCredentialsProvider.create(awsCreds))
                 .region(Region.of(awsS3Properties.getRegion()))
                 .build();
+        }
     }
+    
 
     public URL generatePresignedUrl(String objectName, String objectId) {
         try {

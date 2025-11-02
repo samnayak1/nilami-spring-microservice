@@ -5,11 +5,15 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.springframework.data.domain.Pageable;
 import java.math.BigDecimal;
+
+import java.net.URI;
+
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
@@ -33,6 +37,7 @@ import com.nilami.catalogservice.models.Category;
 import com.nilami.catalogservice.models.Item;
 import com.nilami.catalogservice.repositories.CategoryRepository;
 import com.nilami.catalogservice.repositories.ItemRepository;
+import com.nilami.catalogservice.services.serviceAbstractions.FileUploadService;
 import com.nilami.catalogservice.services.serviceImplementations.ItemServiceImpl;
 
 @ExtendWith(MockitoExtension.class)
@@ -43,8 +48,15 @@ public class ItemServiceTest {
     @Mock
     private CategoryRepository categoryRepository;
 
+    
+
     @InjectMocks
     private ItemServiceImpl itemService;
+    
+   
+    @Mock
+    private FileUploadService fileService;
+      
 
     private Category category;
     private Item item;
@@ -64,7 +76,7 @@ public class ItemServiceTest {
                 .basePrice(BigDecimal.valueOf(1500))
                 .brand("Asus")
                 .creatorUserId("user123")
-                .pictureIds(List.of("pic1", "pic2"))
+                .pictureIds(List.of("pic1.png", "pic2.jpg"))
                 .category(category)
                 .expiryTime(new Date(System.currentTimeMillis() + 100000)) // future
                 .createdAt(Instant.now())
@@ -74,23 +86,35 @@ public class ItemServiceTest {
     }
 
     @Test
-    void testGetItem() {
+    void testGetItem() throws Exception{
         when(itemRepository.findById(item.getId())).thenReturn(Optional.of(item));
+         when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic1.png"))
+            .thenReturn(URI.create("https://mock-s3.com/pic1.png").toURL());
+        when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic2.jpg"))
+            .thenReturn(URI.create("https://mock-s3.com/pic2.jpg").toURL());
+
 
         ItemDTO result = itemService.getItem(item.getId().toString());
-
+       
         assertNotNull(result);
         assertEquals("Laptop", result.getTitle());
         verify(itemRepository, times(1)).findById(item.getId());
+        assertEquals(2, result.getPictureIds().size());
+        verify(fileService, times(2)).generateDownloadPresignedUrl(anyString());
     }
 
     @Test
-    void testGetAllItems() {
+    void testGetAllItems() throws Exception {
         Page<Item> page = new PageImpl<>(List.of(item));
         when(itemRepository.findAll(PageRequest.of(0, 10))).thenReturn(page);
+     when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic1.png"))
+            .thenReturn(URI.create("https://mock-s3.com/pic1.png").toURL());
+       when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic2.jpg"))
+            .thenReturn(URI.create("https://mock-s3.com/pic2.jpg").toURL());
 
+            
         Page<ItemDTO> result = itemService.getAllItems(PageRequest.of(0, 10));
-
+      
         assertEquals(1, result.getTotalElements());
         assertEquals("Laptop", result.getContent().get(0).getTitle());
         verify(itemRepository, times(1)).findAll(any(PageRequest.class));
@@ -139,12 +163,19 @@ public class ItemServiceTest {
     }
 
 @Test
-void testSearchItem() {
+void testSearchItem() throws Exception{
     Pageable pageable = PageRequest.of(0, 10);
     
     when(itemRepository.findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
             "lap", "lap", pageable))
         .thenReturn(new PageImpl<>(List.of(item), pageable, 1));
+
+    when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic1.png"))
+            .thenReturn(URI.create("https://mock-s3.com/pic1.png").toURL());
+     when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic2.jpg"))
+            .thenReturn(URI.create("https://mock-s3.com/pic2.jpg").toURL());
+
+
 
     Page<ItemDTO> results = itemService.searchItem("lap", pageable);
 
@@ -154,5 +185,7 @@ void testSearchItem() {
     verify(itemRepository, times(1))
         .findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase("lap", "lap", pageable);
 }
+
+
 
 }

@@ -16,9 +16,11 @@ import com.nilami.catalogservice.repositories.CategoryRepository;
 import com.nilami.catalogservice.services.serviceAbstractions.CategoryService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CategoryServiceImpl implements CategoryService {
        private final CategoryRepository categoryRepository;
 
@@ -46,7 +48,7 @@ public class CategoryServiceImpl implements CategoryService {
                 .description(request.getDescription())
                 .build();
         Category saved = categoryRepository.save(category);
-        System.out.println("saved:"+saved);
+        log.info("Saved Category: {}",saved.getId());
         return CategoryDTO.toCategoryDTO(saved);
     }
 

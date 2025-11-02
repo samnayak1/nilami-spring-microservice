@@ -1,12 +1,8 @@
 package com.nilami.authservice.services.implementations;
 
 import java.math.BigDecimal;
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
-
 import org.springframework.stereotype.Service;
 
 import com.nilami.authservice.dto.UserDTO;
@@ -40,22 +36,7 @@ public class UserServiceImplementation implements UserService{
         return UserDTO.toUserDTO(user.get());
     }
 
-    public List<UserDTO> getUsersDetailsByIds(List<String> userIds) {
-    if (userIds == null || userIds.isEmpty()) {
-        return Collections.emptyList();
-    }
-    
-    List<UUID> userListInUUID = userIds.stream()
-    .map(userId -> UUID.fromString(userId))
-    .collect(Collectors.toList());
 
-    List<UserModel> users = userRepository.findAllById(userListInUUID);
-    
-
-    return users.stream()
-            .map(user->UserDTO.toUserDTO(user))  
-            .collect(Collectors.toList());
-}
 
 
   @Override

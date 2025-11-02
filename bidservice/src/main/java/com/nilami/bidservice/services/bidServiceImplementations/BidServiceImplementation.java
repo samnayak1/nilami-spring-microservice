@@ -142,7 +142,7 @@ public class BidServiceImplementation implements BidService {
         UUID userId = bid.getCreatorId();
 
         UUID itemId = bid.getItemId();
-
+        
         ApiResponse<UserDTO> userResponse = userClient.getUserDetails(userId.toString());
 
         UserDTO user = (UserDTO) userResponse.getData();
@@ -158,6 +158,7 @@ public class BidServiceImplementation implements BidService {
                 .itemName(itemName)
                 .created(bid.getCreated())
                 .price(bid.getPrice())
+                .creatorId(bid.getCreatorId())
                 .creatorName(userName)
                 .build();
 

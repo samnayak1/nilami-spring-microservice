@@ -6,6 +6,7 @@ nilami with microservices
 
 To run tests
 mvn -Dtest=ItemServiceTest test
+mvn -Dtest=CategoryServiceTest test
 
 
 To create a new service

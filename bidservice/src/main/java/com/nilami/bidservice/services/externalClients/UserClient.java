@@ -1,8 +1,5 @@
 package com.nilami.bidservice.services.externalClients;
 
-import java.util.List;
-
-
 import org.springframework.cloud.openfeign.FeignClient;
 
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,34 +14,24 @@ import com.nilami.bidservice.controllers.requestTypes.BalanceReservationRequest;
 import com.nilami.bidservice.dto.ApiResponse;
 import com.nilami.bidservice.dto.BalanceReservationResponse;
 import com.nilami.bidservice.dto.UserDTO;
+import com.nilami.bidservice.services.externalClients.fallback.UserClientFallback;
 
-@FeignClient(
-    name = "AUTH-SERVICE",
-     url = "${AUTH_SERVICE_HOST}",
-     configuration = FeignHeaderForwardingConfig.class,
-       path = "/api/v1/internal/auth")
+@FeignClient(name = "AUTH-SERVICE", url = "${AUTH_SERVICE_HOST}", configuration = FeignHeaderForwardingConfig.class, path = "/api/v1/internal/auth", fallback = UserClientFallback.class)
 public interface UserClient {
 
-    @PostMapping("/many/details")
-    public ApiResponse<List<UserDTO>> getUsersDetailsByIds(List<String> userIds);
-
     @GetMapping("/details")
-    public ApiResponse<UserDTO> getUserDetails(@RequestParam("userId") String userId);
+    public ApiResponse<UserDTO> getUserDetails(@RequestParam String userId);
 
- 
-        @PostMapping("/balance/reserve")
+    @PostMapping("/balance/reserve")
     ApiResponse<BalanceReservationResponse> reserveBalance(
-            @RequestBody BalanceReservationRequest request
-    );
+            @RequestBody BalanceReservationRequest request);
 
     @PostMapping("/balance/commit/{reservationId}")
-  ApiResponse<Void> commitBalanceReservation(
-            @PathVariable("reservationId") String reservationId
-    );
+    ApiResponse<Void> commitBalanceReservation(
+            @PathVariable String reservationId);
 
     @PostMapping("/balance/cancel/{reservationId}")
     ApiResponse<Void> cancelBalanceReservation(
-            @PathVariable("reservationId") String reservationId
-    );
+            @PathVariable String reservationId);
 
 }
