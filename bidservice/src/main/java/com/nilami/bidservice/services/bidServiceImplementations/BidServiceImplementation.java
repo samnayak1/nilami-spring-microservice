@@ -15,6 +15,7 @@ import com.nilami.bidservice.dto.BalanceReservationResponse;
 import com.nilami.bidservice.dto.BidDTO;
 import com.nilami.bidservice.dto.ItemDTO;
 import com.nilami.bidservice.dto.UserDTO;
+import com.nilami.bidservice.exceptions.BidLessThanItemException;
 import com.nilami.bidservice.exceptions.BidPlacementException;
 import com.nilami.bidservice.exceptions.InvalidBidException;
 import com.nilami.bidservice.exceptions.ItemExpiredException;
@@ -61,7 +62,13 @@ public class BidServiceImplementation implements BidService {
                     throw new InvalidBidException("Bid price must be higher than the last bid: " + lastBidPrice);
                 }
             }
-       
+
+            ItemDTO item=itemClient.getItem(itemId);
+            if(price.compareTo(item.getBasePrice())<0){
+                 throw new BidLessThanItemException("Price must be higher than the item's base price");
+            }
+            log.info("Item id {} fetched with item name",itemId,item.getTitle());
+             
             Boolean isExpired = itemClient.checkExpiry(itemId);
             log.info("The expiry of the item {} is evaluated to {}",itemId,isExpired);
             if (isExpired == null || isExpired) {
