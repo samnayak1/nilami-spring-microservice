@@ -3,13 +3,14 @@ package com.nilami.catalogservice.services.serviceImplementations;
 import java.net.URL;
 import java.time.Duration;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.nilami.catalogservice.configs.AwsS3Properties;
 import com.nilami.catalogservice.services.serviceAbstractions.FileUploadService;
 
 import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
+
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
@@ -24,14 +25,13 @@ import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequ
 
 @Service
 @Slf4j
-@RequiredArgsConstructor
 public class FileUploadServiceImpl implements FileUploadService {
 
      private final AwsS3Properties awsS3Properties;
      private S3Presigner presigner; 
 
  
-    protected FileUploadServiceImpl(AwsS3Properties props, S3Presigner presigner) {
+    protected FileUploadServiceImpl(AwsS3Properties props,@Autowired(required = false) S3Presigner presigner) {
         this.awsS3Properties = props;
         this.presigner = presigner;
     }

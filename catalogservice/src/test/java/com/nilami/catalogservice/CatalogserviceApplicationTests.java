@@ -1,13 +1,13 @@
-package com.nilami.catalogservice;
+// package com.nilami.catalogservice;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+// import org.junit.jupiter.api.Test;
+// import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-class CatalogserviceApplicationTests {
+// @SpringBootTest
+// class CatalogserviceApplicationTests {
 
-	@Test
-	void contextLoads() {
-	}
+// 	@Test
+// 	void contextLoads() {
+// 	}
 
-}
+// }

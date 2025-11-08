@@ -143,7 +143,6 @@ public ResponseEntity<ApiResponse<Boolean>> subtractBankBalanceFromUser(
     }
     }
 
-
 @PostMapping("/balance/reserve")
 public ResponseEntity<ApiResponse<BalanceReservationResponse>> reserveBalance(
         @Valid @RequestBody BalanceReservationRequest request) {
@@ -155,6 +154,22 @@ public ResponseEntity<ApiResponse<BalanceReservationResponse>> reserveBalance(
                 .message("Reservation request success")
                 .data(response)
                 .build());
+    } catch (InsufficientBalanceException e) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST) 
+                .body(ApiResponse.<BalanceReservationResponse>builder()
+                        .success(false)
+                        .message(e.getMessage())
+                        .data(null)
+                        .build());
+    } catch (UserDoesNotExistException e) {
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND) 
+                .body(ApiResponse.<BalanceReservationResponse>builder()
+                        .success(false)
+                        .message(e.getMessage())
+                        .data(null)
+                        .build());
     } catch (Exception e) {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
