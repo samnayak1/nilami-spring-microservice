@@ -1,4 +1,4 @@
-package com.nilami.catalogservice.configs;
+package com.nilami.authservice.configs;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,8 +13,8 @@ public class OpenApiConfig {
     public OpenAPI apiInfo() {
         return new OpenAPI()
             .info(new Info()
-                .title("Catalog Service API")
-                .description("API documentation for Catalog Service")
+                .title("Auth Service API")
+                .description("API documentation for Auth Service")
                 .version("1.0.0"));
     }
 }

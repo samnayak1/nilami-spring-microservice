@@ -1,4 +1,4 @@
-package com.nilami.catalogservice.configs;
+package com.nilami.api_gateway.configs;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,8 +13,8 @@ public class OpenApiConfig {
     public OpenAPI apiInfo() {
         return new OpenAPI()
             .info(new Info()
-                .title("Catalog Service API")
-                .description("API documentation for Catalog Service")
+                .title("Gateway Service API")
+                .description("API documentation for gateway Service")
                 .version("1.0.0"));
     }
 }
