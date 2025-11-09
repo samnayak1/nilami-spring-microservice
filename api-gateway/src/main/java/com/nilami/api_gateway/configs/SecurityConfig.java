@@ -24,6 +24,8 @@ public class SecurityConfig {
                     "/api/v1/gateway/login",
                     "/api/v1/gateway/signup",
                     "/api/v1/gateway/test",
+                    "/api/v1/gateway/validate-token",
+                     "/api/v1/gateway/refresh",
                     "/v3/api-docs/**",
                     "/swagger-ui/**",
                     "/swagger-ui.html",

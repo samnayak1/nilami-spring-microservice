@@ -1,8 +1,12 @@
 package com.nilami.api_gateway.controllers.v1;
 
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
+
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -25,8 +29,11 @@ import com.nilami.api_gateway.configs.KeycloakClientProperties;
 import com.nilami.api_gateway.controllers.requestTypes.LoginRequest;
 import com.nilami.api_gateway.controllers.requestTypes.RefreshTokenRequest;
 import com.nilami.api_gateway.controllers.requestTypes.SignupRequest;
+import com.nilami.api_gateway.controllers.requestTypes.TokenValidationRequest;
 import com.nilami.api_gateway.dto.ApiResponse;
+import com.nilami.api_gateway.dto.TokenValidationResponse;
 import com.nilami.api_gateway.exceptions.KeycloakClientError;
+import com.nilami.api_gateway.models.UserInfo;
 import com.nilami.api_gateway.models.UserModel;
 import com.nilami.api_gateway.services.UserAuthSignupService;
 import com.nilami.api_gateway.services.externalClients.AuthClient;
@@ -181,6 +188,82 @@ public ResponseEntity<?> refreshToken(@RequestBody RefreshTokenRequest requestBo
                 .body(Map.of("error", "Unexpected error during refresh", "details", e.getMessage()));
     }
 }
+
+   @SuppressWarnings({ "rawtypes", "unchecked", "null" })
+@PostMapping("/validate-token")
+    public ResponseEntity<TokenValidationResponse> validateToken(
+            @RequestBody TokenValidationRequest request) {
+        
+        try {
+            String token = request.getToken();
+            
+            if (token == null || token.isBlank()) {
+                return ResponseEntity.badRequest()
+                    .body(new TokenValidationResponse(false, "Token is required", null));
+            }
+            
+
+            String introspectionUrl = keycloakRealm + "/protocol/openid-connect/token/introspect";
+            
+            MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
+             form.add("client_id", clientProps.getClientId());
+             form.add("client_secret", clientProps.getClientSecret());
+             form.add("token", token);
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+            
+            HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(form, headers);
+            
+            ResponseEntity<Map> response = restTemplate.postForEntity(
+                introspectionUrl, 
+                requestEntity, 
+                Map.class
+            );
+            
+            Map<String, Object> introspectionResult = response.getBody();
+            
+            // Check if token is active
+            Boolean active = (Boolean) introspectionResult.get("active");
+            
+            if (Boolean.TRUE.equals(active)) {
+                // Extract user information
+                UserInfo userInfo = new UserInfo();
+                userInfo.setUserId((String) introspectionResult.get("sub"));
+                userInfo.setUsername((String) introspectionResult.get("preferred_username"));
+                userInfo.setEmail((String) introspectionResult.get("email"));
+                
+                // Extract roles
+                Map<String, Object> realmAccess = (Map<String, Object>) introspectionResult.get("realm_access");
+                if (realmAccess != null) {
+                    List<String> roles = (List<String>) realmAccess.get("roles");
+                    userInfo.setRoles(roles != null ? roles : new ArrayList<>());
+                }
+                
+                // Extract token expiry
+                Long exp = ((Number) introspectionResult.get("exp")).longValue();
+                userInfo.setTokenExpiry(Instant.ofEpochSecond(exp));
+                
+                return ResponseEntity.ok(
+                    new TokenValidationResponse(true, "Token is valid", userInfo)
+                );
+            } else {
+                return ResponseEntity.ok(
+                    new TokenValidationResponse(false, "Token is not active", null)
+                );
+            }
+            
+        } catch (HttpClientErrorException e) {
+            log.error("Keycloak introspection failed: {}", e.getResponseBodyAsString());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(new TokenValidationResponse(false, "Token validation failed", null));
+                
+        } catch (Exception e) {
+            log.error("Unexpected error during token validation", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new TokenValidationResponse(false, "Internal error", null));
+        }
+    }
     
 private ResponseEntity<ApiResponse<UserModel>> handleRegistrationFailure(String keycloakUserId, Exception ex) {
     if (keycloakUserId != null) {
