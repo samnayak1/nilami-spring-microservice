@@ -23,6 +23,12 @@ services:
       - .env
     ports:
       - "9092:9092"
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 9092 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     environment:
 
       KAFKA_BROKER_ID: ${KAFKA_BROKER_ID}
@@ -76,7 +82,8 @@ services:
       - KAFKA_USER=${KAFKA_USER}
       - KAFKA_PASSWORD=${KAFKA_PASSWORD}
     depends_on:
-      - kafka
+      kafka:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:
