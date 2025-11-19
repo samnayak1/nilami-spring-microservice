@@ -42,6 +42,7 @@ import com.nilami.bidservice.exceptions.BidPlacementException;
 
 import com.nilami.bidservice.models.Bid;
 import com.nilami.bidservice.repositories.BidRepository;
+import com.nilami.bidservice.services.BidEventPublisher;
 import com.nilami.bidservice.services.bidServiceImplementations.BidServiceImplementation;
 import com.nilami.bidservice.services.externalClients.ItemClient;
 import com.nilami.bidservice.services.externalClients.UserClient;
@@ -61,6 +62,11 @@ class BidServiceTest {
 
     @Mock
     private ItemClient itemClient;
+
+    @Mock
+   private  BidEventPublisher bidEventPublisher;
+
+
 
     @InjectMocks
     private BidServiceImplementation bidService;
@@ -114,7 +120,7 @@ class BidServiceTest {
         when(userClient.commitBalanceReservation(balanceResponse.getReservationId()))
                 .thenReturn(new ApiResponse<>(true, "committed reservation", null));
         when(bidRepository.save(any(Bid.class))).thenReturn(expectedBid);
-
+        
  
         BidDTO result = bidService.placeBid(itemId.toString(), bidAmount, userId.toString());
 

@@ -1,9 +1,7 @@
 package com.nilami.bidservice.controllers.v1;
 
-import java.math.BigDecimal;
-import java.time.Instant;
 import java.util.List;
-import java.util.UUID;
+
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,9 +17,9 @@ import org.springframework.web.bind.annotation.RestController;
 import com.nilami.bidservice.controllers.requestTypes.PlaceBidRequest;
 import com.nilami.bidservice.dto.ApiResponse;
 import com.nilami.bidservice.dto.BidDTO;
-import com.nilami.bidservice.dto.BidEventMessageQueuePayload;
+
 import com.nilami.bidservice.models.Bid;
-import com.nilami.bidservice.services.BidEventPublisher;
+
 import com.nilami.bidservice.services.BidService;
 
 import lombok.RequiredArgsConstructor;
@@ -33,7 +31,7 @@ public class BidController {
 
      private final BidService bidService;
 
-     private final BidEventPublisher bidEventPublisher;
+
 
 
     @GetMapping("/test")
@@ -43,7 +41,7 @@ public class BidController {
 
         System.out.println("roles: " + roles);
         System.out.println("userId: " + userId);
-        bidEventPublisher.sendBidEventToQueue(new BidEventMessageQueuePayload(UUID.fromString("7a6c5a1f-4d8b-45c4-935b-2d0e9db05e8c"), UUID.fromString("f2c3e4be-1c0d-4d75-9d49-0a1be6e0d82a"), BigDecimal.valueOf(89.92), UUID.fromString("3d8f0a57-8b97-4ad1-af49-8f50d6e6f2fe"), Instant.now().toString()));
+    
         return ResponseEntity.ok("Hello");
     }
 
