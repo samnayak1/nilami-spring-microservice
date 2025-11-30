@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalog-server
+  labels:
+    app: catalog-server
+spec:
+  replicas: 2 
+  selector:
+    matchLabels:
+      app: catalog-server
+  template:
+    metadata:
+      labels:
+        app: catalog-server
+    spec:
+      containers:
+      - name: catalog-server-container
+        image: catalogbackend:latest 
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8085
+        env:
+        - name: SERVER_PORT
+          value: "8085"
+
+        - name: POSTGRES_HOST
+                                    
+          valueFrom:
+            configMapKeyRef:
+              name: catalog-config-map      
+              key: POSTGRES_HOST # The key to fetch.    #same as the metadata.name of the catalog db service.
+        - name: EUREKA_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: catalog-config-map      
+              key: EUREKA_HOST
+
+
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: catalog-db-secret
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: catalog-db-secret
+              key: POSTGRES_PASSWORD
+
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: catalog-db-secret
+              key: POSTGRES_DB
+        - name: AWS_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: catalog-db-secret
+              key: AWS_ACCESS_KEY
+        - name: AWS_BUCKET_REGION
+          valueFrom:
+            secretKeyRef:
+              name: catalog-db-secret
+              key: AWS_BUCKET_REGION
+        - name: AWS_BUCKET_NAME
+          valueFrom:
+            secretKeyRef:
+              name: catalog-db-secret
+              key: AWS_BUCKET_NAME
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: catalog-db-secret
+              key: AWS_SECRET_ACCESS_KEY
+
+          
