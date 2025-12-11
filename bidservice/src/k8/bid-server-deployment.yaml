@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bid-server-deployment
+  labels:
+    app: bid-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bid-server
+  template:
+    metadata:
+      labels:
+        app: bid-server
+    spec:
+      containers:
+        - name: bid-server
+          image: bidservice:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8082
+          env:
+            - name: SERVER_PORT
+              value: "8082"
+
+            - name: POSTGRES_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: bid-service-config
+                  key: POSTGRES_HOST
+            - name: EUREKA_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: bid-service-config
+                  key: EUREKA_HOST
+            - name: KAFKA_BROKER_SERVICE
+              valueFrom:
+                configMapKeyRef:
+                  name: bid-service-config
+                  key: KAFKA_BROKER_SERVICE
+
+          envFrom:
+            - secretRef:
+                name: bid-secret
+          resources:
+            limits:
+              memory: "768Mi"
+              cpu: "500m"
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8082
+            initialDelaySeconds: 15
+            periodSeconds: 10

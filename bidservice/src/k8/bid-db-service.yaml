@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: bid-db-service #This is the label of the service file for bid-db while the selector bid-service-db is to match the pods. We can find the pods in the Deployment file
+  labels:
+    app: bid-service-db
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5432
+      targetPort: 5432
+      protocol: TCP
+  selector:
+    app: bid-service-db

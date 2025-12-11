@@ -10,7 +10,7 @@ import com.nilami.bidservice.configs.FeignHeaderForwardingConfig;
 import com.nilami.bidservice.dto.ItemDTO;
 import com.nilami.bidservice.services.externalClients.fallback.ItemClientFallback;
 
-@FeignClient(name = "CATALOG-SERVICE", url = "${CATALOG_SERVICE_HOST}", configuration = FeignHeaderForwardingConfig.class, fallback = ItemClientFallback.class)
+@FeignClient(name = "CATALOG-SERVICE", configuration = FeignHeaderForwardingConfig.class, fallback = ItemClientFallback.class)
 public interface ItemClient {
 
     @GetMapping("/api/v1/items/{id}")

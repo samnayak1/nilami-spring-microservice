@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bid-db-deployment
+  labels:
+    app: bid-service-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bid-service-db
+  template:
+    metadata:
+      labels:
+        app: bid-service-db
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                    name: bid-secret
+                    key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                    name: bid-secret
+                    key: POSTGRES_PWD
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                    name: bid-secret
+                    key: POSTGRES_DB
+
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql
+
+
+      volumes:
+        - name: postgres-storage
+          persistentVolumeClaim:
+            claimName: bid-db-pvc

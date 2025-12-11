@@ -16,7 +16,7 @@ import com.nilami.bidservice.dto.BalanceReservationResponse;
 import com.nilami.bidservice.dto.UserDTO;
 import com.nilami.bidservice.services.externalClients.fallback.UserClientFallback;
 
-@FeignClient(name = "AUTH-SERVICE", url = "${AUTH_SERVICE_HOST}", configuration = FeignHeaderForwardingConfig.class, path = "/api/v1/internal/auth", fallback = UserClientFallback.class)
+@FeignClient(name = "AUTH-SERVICE", configuration = FeignHeaderForwardingConfig.class, path = "/api/v1/internal/auth", fallback = UserClientFallback.class)
 public interface UserClient {
 
     @GetMapping("/details")

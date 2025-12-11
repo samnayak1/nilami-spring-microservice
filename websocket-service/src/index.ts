@@ -27,10 +27,13 @@ startBidConsumer((event) => {
     }
 });
 const httpServer=app.listen(PORT, () => {
+  console.log("SERVER STARTING!!!")
   console.log(`Server running on port ${PORT}`);
+
+
   registerWithEureka(PORT); 
 });
-
+//TODO: get token from client and hit validate token endpoint
 const socketManager = new SocketManager();
 socketManager.init(httpServer);
 socketManager.onConnection((socket) => {

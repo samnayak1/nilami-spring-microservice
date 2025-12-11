@@ -20,7 +20,7 @@ import java.util.Optional;
 
 @Component
 public class KeycloakForwardHeaderFilter extends OncePerRequestFilter {
-
+//TODO: Take the Keycloak out of the gateway and into the auth service 
   
     @SuppressWarnings("null")
     @Override

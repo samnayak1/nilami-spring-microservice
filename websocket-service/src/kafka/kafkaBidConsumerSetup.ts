@@ -1,14 +1,25 @@
-import { Kafka } from 'kafkajs';
+import { Kafka, logLevel } from 'kafkajs';
 import { KafkaConsumerGroups, KafkaTopics } from './enums/kafkaEnums';
 import { BidEvent, BidEventSchema } from './validators/bidAddedPayloadValidator';
 
-
 export const kafka = new Kafka({
   clientId: 'websocket-service',
-  brokers: [process.env.KAFKA_BROKER],
-  ssl: false,
-  sasl: undefined,
-  logLevel: 2 
+  brokers: [process.env.KAFKA_BROKER!],
+
+  ssl: false, 
+  
+  logLevel: logLevel.DEBUG, 
+  
+
+  sasl: {
+   
+    //It is SASL plaintext btw
+    mechanism: 'plain', 
+    
+    //take from kubernets env file
+     username: process.env.KAFKA_USERNAME!,
+     password: `${process.env.KAFKA_PASSWORD}`
+  },
 });
 
 export const consumer = kafka.consumer({ groupId: KafkaConsumerGroups.ItemBidConsumer });

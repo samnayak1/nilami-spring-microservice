@@ -26,7 +26,7 @@ eval $(minikube docker-env)
 Build the Image: Build your image again (or ensure it's built). The image will be built directly into Minikube's accessible cache.
 
 Bash
-
+docker image list
 docker build -t catalogbackend:latest .
 Reset Docker Environment: Switch back to your host's Docker daemon.
 
@@ -44,7 +44,7 @@ kubectl exec -it catalog-server-5979d49f96-r7jlp -- curl -v http://registry-serv
 
 
 
-kubectl describe pod
+kubectl describe pod <podname>
 
 
 
@@ -61,6 +61,47 @@ data:
   POSTGRES_DB: <base64-encoded-POSTGRES_DB>
 
 
-kubeseal --format=yaml < catalog-secret-unsealed.yaml > catalog-secret-sealed.yaml
+kubeseal --format=yaml < catalog-secret-unsealed.yaml --controller-namespace kube-system \
+  --controller-name sealed-secrets > catalog-secret-sealed.yaml
 
 kubectl apply -f catalog-secret-sealed.yaml
+
+
+echo -n "secret" | base64
+
+
+KAFKA_ADMIN_PASSWORD=$(openssl rand -base64 32)
+KAFKA_USER1_PASSWORD=$(openssl rand -base64 32)
+KAFKA_CONTROLLER_PASSWORD=$(openssl rand -base64 32)
+
+echo "Admin: $KAFKA_ADMIN_PASSWORD"
+echo "User1: $KAFKA_USER1_PASSWORD"
+echo "Controller: $KAFKA_CONTROLLER_PASSWORD"
+
+kubectl create secret generic kafka-user-passwords \
+  --from-literal=client-passwords="$KAFKA_USER1_PASSWORD" \
+  --from-literal=system-user-password="$KAFKA_ADMIN_PASSWORD" \
+  --from-literal=controller-password="$KAFKA_CONTROLLER_PASSWORD" \
+  --namespace kafka \
+  --dry-run=client -o yaml > kafka-secret-temp.yaml
+
+
+
+# Delete the temporary file with plaintext
+rm kafka-secret-temp.yaml
+
+
+
+helm install kafka bitnami/kafka -f kafka-values.yaml --namespace <namespace> --create-namespace
+
+
+helm uninstall kafka --namespace kafka
+
+
+helm upgrade kafka bitnami/kafka \
+  -f kafka-values.yaml \
+  --namespace kafka
+
+
+  kubectl exec websocket-service-deployment-6f9b65bb6f-m5m58 -- printenv | 
+grep KAFKA_BROKER

@@ -11,8 +11,7 @@ import com.nilami.api_gateway.models.UserModel;
 
 
 @FeignClient(
-    name = "AUTH-SERVICE",
-    url="${AUTH_SERVICE_HOST}"
+    name = "AUTH-SERVICE"
 )
 public interface AuthClient {
 
