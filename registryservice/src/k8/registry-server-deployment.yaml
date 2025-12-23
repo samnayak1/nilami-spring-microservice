@@ -13,8 +13,8 @@ spec:
     spec:
       containers:
       - name: registry-service
-        image: registryservice:latest
-        imagePullPolicy: Never
+        image: samnayak1/registryservice:1.0.0
+        imagePullPolicy: IfNotPresent
         resources:
           limits:
             memory: "1024Mi"
