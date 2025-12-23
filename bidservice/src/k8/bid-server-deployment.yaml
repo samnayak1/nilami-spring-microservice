@@ -16,8 +16,8 @@ spec:
     spec:
       containers:
         - name: bid-server
-          image: bidservice:latest
-          imagePullPolicy: Never
+          image: samnayak1/bidservice:1.0.1
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8082
           env:
@@ -40,9 +40,32 @@ spec:
                   name: bid-service-config
                   key: KAFKA_BROKER_SERVICE
 
-          envFrom:
-            - secretRef:
-                name: bid-secret
+            - name: KAFKA_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: bid-secret  
+                  key: KAFKA_USERNAME
+            - name: KAFKA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: bid-secret
+                  key: KAFKA_PASSWORD
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: bid-secret
+                  key: POSTGRES_DB
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: bid-secret
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: bid-secret
+                  key: POSTGRES_PASSWORD
+
           resources:
             limits:
               memory: "768Mi"

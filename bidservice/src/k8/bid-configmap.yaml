@@ -5,11 +5,13 @@ metadata:
   labels:
     app: bid-service-config
 data:
-  POSTGRES_HOST: bid-db-service
+  POSTGRES_HOST: bid-db-rw
 
   EUREKA_HOST: http://registry-service:8761
 
-  KAFKA_BROKER_SERVICE: kafka-0.kafka-headless.kafka.svc.cluster.local:9092,kafka-1.kafka-headless.kafka.svc.cluster.local:9092,kafka-2.kafka-headless.kafka.svc.cluster.local:9092
+  # add ,kafka-1.kafka-headless.kafka.svc.cluster.local:9092,kafka-2.kafka-headless.kafka.svc.cluster.local:9092 for more replicas
+
+  KAFKA_BROKER_SERVICE: kafka-0.kafka-headless.kafka.svc.cluster.local:9092
   
 
   # headless service allows brokers to advertise their unique, predictable FQDN and that is why we use the headless service
