@@ -33,7 +33,7 @@ export const consumer = kafka.consumer({ groupId: KafkaConsumerGroups.ItemBidCon
 //NOTE: To have 3 different consumers in the same consumer group, the groupId should be the same
 //In our case it will be KafkaConsumerGroups.ItemBidConsumer.
 
-//backpressure is when consumers read slower than producers. For our case, we don't have many requests so it's fine.
+
 export const startBidConsumer = async (onBid: (event: BidEvent) => void) => {
   await consumer.connect();
   await consumer.subscribe({

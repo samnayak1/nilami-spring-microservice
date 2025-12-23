@@ -5,7 +5,7 @@ metadata:
   namespace: kafka
 spec:
   serviceName: kafka-headless
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: kafka
@@ -27,7 +27,9 @@ spec:
               value: "4L6g3nShT-eMCtK-X86sw"
             - name: KAFKA_OPTS
               value: "-Djava.security.auth.login.config=/etc/kafka/secrets/kafka_server_jaas.conf"
-
+            - name: KAFKA_HEAP_OPTS
+              value: "-Xms256m -Xmx256m"
+          
           command:
             - sh
             - -euc
@@ -41,7 +43,13 @@ spec:
               /opt/kafka/bin/kafka-storage.sh format -t "$CLUSTER_ID" -c /tmp/server.properties --ignore-formatted || true
 
               exec /opt/kafka/bin/kafka-server-start.sh /tmp/server.properties
-
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "300Mi"
+            limits:
+              cpu: "500m"
+              memory: "450Mi"
           ports:
             - containerPort: 9092
               name: sasl-plaintext
