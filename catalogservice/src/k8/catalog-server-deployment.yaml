@@ -5,7 +5,7 @@ metadata:
   labels:
     app: catalog-server
 spec:
-  replicas: 2 
+  replicas: 1
   selector:
     matchLabels:
       app: catalog-server
@@ -16,10 +16,23 @@ spec:
     spec:
       containers:
       - name: catalog-server-container
-        image: catalogbackend:latest 
-        imagePullPolicy: Never
+        image: samnayak1/catalogbackend:1.0.0 
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8085
+        resources:
+          limits:
+            memory: "768Mi"
+            cpu: "500m"
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8082
+          initialDelaySeconds: 15
+          periodSeconds: 10
         env:
         - name: SERVER_PORT
           value: "8085"
@@ -29,7 +42,7 @@ spec:
           valueFrom:
             configMapKeyRef:
               name: catalog-config-map      
-              key: POSTGRES_HOST # The key to fetch.    #same as the metadata.name of the catalog db service.
+              key: POSTGRES_HOST 
         - name: EUREKA_HOST
           valueFrom:
             configMapKeyRef:
@@ -40,38 +53,38 @@ spec:
         - name: POSTGRES_USER
           valueFrom:
             secretKeyRef:
-              name: catalog-db-secret
+              name: catalog-secret
               key: POSTGRES_USER
         - name: POSTGRES_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: catalog-db-secret
+              name: catalog-secret
               key: POSTGRES_PASSWORD
 
         - name: POSTGRES_DB
           valueFrom:
             secretKeyRef:
-              name: catalog-db-secret
+              name: catalog-secret
               key: POSTGRES_DB
         - name: AWS_ACCESS_KEY
           valueFrom:
             secretKeyRef:
-              name: catalog-db-secret
+              name: catalog-secret
               key: AWS_ACCESS_KEY
         - name: AWS_BUCKET_REGION
           valueFrom:
             secretKeyRef:
-              name: catalog-db-secret
+              name: catalog-secret
               key: AWS_BUCKET_REGION
         - name: AWS_BUCKET_NAME
           valueFrom:
             secretKeyRef:
-              name: catalog-db-secret
+              name: catalog-secret
               key: AWS_BUCKET_NAME
         - name: AWS_SECRET_ACCESS_KEY
           valueFrom:
             secretKeyRef:
-              name: catalog-db-secret
+              name: catalog-secret
               key: AWS_SECRET_ACCESS_KEY
 
           

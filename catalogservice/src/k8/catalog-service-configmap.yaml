@@ -3,7 +3,7 @@ kind: ConfigMap
 metadata:
   name: catalog-config-map
 data:
-  POSTGRES_HOST: catalog-db-service
+  POSTGRES_HOST: catalog-db-rw
 
   EUREKA_HOST: http://registry-service:8761
   
