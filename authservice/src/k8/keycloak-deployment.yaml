@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak
+  template:
+    metadata:
+      labels:
+        app: keycloak
+    spec:
+      initContainers:
+        - name: realm-template
+          image: busybox
+          envFrom:
+            - secretRef:
+                name: auth-service-secrets
+          command:
+            - sh
+            - -c
+            - |
+              sed "s|\${KEYCLOAK_CLIENT_SECRET}|$KEYCLOAK_CLIENT_SECRET|g" \
+              /input/initial-realm.json > /output/initial-realm.json
+          volumeMounts:
+            - name: realm-template
+              mountPath: /input
+            - name: realm-final
+              mountPath: /output
+
+      containers:
+        - name: keycloak
+          image: quay.io/keycloak/keycloak:24.0.1
+          args:
+            - start-dev
+            - --import-realm
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DB_VENDOR
+              value: POSTGRES
+            - name: DB_ADDR
+              value: keycloak-db-rw
+            - name: DB_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  name: auth-service-config
+                  key: KEYCLOAK_POSTGRES_DB
+            - name: DB_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: auth-service-config
+                  key: KEYCLOAK_POSTGRES_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: auth-service-secrets
+                  key: KEYCLOAK_POSTGRES_PASSWORD
+            - name: KEYCLOAK_ADMIN
+              valueFrom:
+                secretKeyRef:
+                  name: auth-service-secrets
+                  key: KEYCLOAK_ADMIN
+            - name: KEYCLOAK_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: auth-service-secrets
+                  key: KEYCLOAK_ADMIN_PASSWORD
+            - name: KC_HOSTNAME_STRICT
+              valueFrom:
+                configMapKeyRef:
+                  name: auth-service-config
+                  key: KC_HOSTNAME_STRICT
+          volumeMounts:
+            - name: realm-final
+              mountPath: /opt/keycloak/data/import
+
+      volumes:
+        - name: realm-template
+          configMap:
+            name: keycloak-realm
+        - name: realm-final
+          emptyDir: {}

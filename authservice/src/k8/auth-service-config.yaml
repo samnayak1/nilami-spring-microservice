@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: auth-service-config
+data:
+  KEYCLOAK_POSTGRES_DB: nilami_keycloak
+  KEYCLOAK_POSTGRES_USER: samnayak1
+  KC_HOSTNAME_STRICT: "false"
+  
+  KEYCLOAK_CLIENT_ID: nilami-client
+
+  KEYCLOAK_REALM: nilami-microservices-security-realm
+
+  KEYCLOAK_URL: http://keycloak:8080
+
+  EUREKA_HOST: http://registry-service:8761
+
+
+  AUTH_SERVER_POSTGRES_HOST: auth-db-rw
+
+
+  AUTH_SERVER_DB: nilami_auth
+

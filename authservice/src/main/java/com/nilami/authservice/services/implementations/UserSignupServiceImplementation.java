@@ -4,22 +4,27 @@ package com.nilami.authservice.services.implementations;
 
 import java.util.UUID;
 
+
 import org.springframework.stereotype.Service;
 
 import com.nilami.authservice.controllers.requestTypes.SignupRequest;
+
 import com.nilami.authservice.exceptions.UserAlreadyExistsException;
 import com.nilami.authservice.models.Roles;
 import com.nilami.authservice.models.UserModel;
 import com.nilami.authservice.repositories.UserRepository;
 import com.nilami.authservice.services.UserSignupService;
 
+import lombok.extern.log4j.Log4j2;
+
 
 @Service
+@Log4j2
 public class UserSignupServiceImplementation implements UserSignupService{
  
 
 
-  private UserRepository userRepository;
+  private final UserRepository userRepository;
 
 
    UserSignupServiceImplementation(UserRepository userRepository){
@@ -33,7 +38,7 @@ public UserModel signupUser(SignupRequest request) {
             System.out.println("ERROR WHILE SIGNING UP: Duplicate email for"+request.getEmail());
             throw new UserAlreadyExistsException("User already exists.");
         }
-
+    
         UserModel user = new UserModel();
         user.setId(UUID.fromString(request.getId()));
         user.setName(request.getName());
