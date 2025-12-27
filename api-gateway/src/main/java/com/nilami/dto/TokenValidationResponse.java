@@ -1,5 +1,4 @@
-package com.nilami.api_gateway.dto;
-
+package com.nilami.dto;
 
 import com.nilami.api_gateway.models.UserInfo;
 

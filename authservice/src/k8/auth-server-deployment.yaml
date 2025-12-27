@@ -49,6 +49,16 @@ spec:
                 configMapKeyRef:
                   name: auth-service-config
                   key: AUTH_SERVER_POSTGRES_HOST
+                
+            - name: EUREKA_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: auth-service-config
+                  key: EUREKA_HOST
+
+
+
+                  
 
                   
 

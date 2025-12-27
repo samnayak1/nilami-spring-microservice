@@ -1,9 +1,8 @@
-package com.nilami.api_gateway.controllers.requestTypes;
+package com.nilami.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-
 import lombok.Setter;
 
 @Getter

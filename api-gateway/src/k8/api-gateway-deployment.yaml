@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+spec:
+  selector:
+    matchLabels:
+      app: api-gateway
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+    spec:
+      containers:
+      - name: api-gateway
+        image: samnayak1/api-gateway:1.0.2
+        imagePullPolicy: IfNotPresent
+        envFrom:
+          - configMapRef:
+              name: gateway-config
+        ports:
+        - containerPort: 8084

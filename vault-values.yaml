@@ -1,0 +1,11 @@
+server:
+  dataStorage:
+    enabled: true
+    size: 10Gi
+    storageClass: standard
+
+  standalone:
+    enabled: true
+
+  dev:
+    enabled: false
