@@ -4,8 +4,8 @@ metadata:
   name: auth-service
 spec:
   selector:
-    app: auth-service
+    app: auth-server
   ports:
-    - port: 8084
-      targetPort: 8084
+    - port: 8081
+      targetPort: 8081
 #defaults to ClusterIP btw. Exposes service only inside a cluster through auth-service.default.svc.cluster.local. NodePort exposes it outside

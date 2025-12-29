@@ -15,14 +15,14 @@ spec:
     spec:
       containers:
         - name: auth-server
-          image: samnayak1/auth-server:1.0.0
+          image: samnayak1/auth-server:1.0.3
           imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 8084
-          
+            - containerPort: 8081
+
           env:
             - name: SERVER_PORT
-              value: "8084"
+              value: "8081"
             - name: KEYCLOAK_CLIENT_ID
               valueFrom:
                 configMapKeyRef:
@@ -49,18 +49,12 @@ spec:
                 configMapKeyRef:
                   name: auth-service-config
                   key: AUTH_SERVER_POSTGRES_HOST
-                
+
             - name: EUREKA_HOST
               valueFrom:
                 configMapKeyRef:
                   name: auth-service-config
                   key: EUREKA_HOST
-
-
-
-                  
-
-                  
 
             - name: KEYCLOAK_CLIENT_SECRET
               valueFrom:
@@ -88,4 +82,3 @@ spec:
                 secretKeyRef:
                   name: auth-service-secrets
                   key: AUTH_SERVER_DB_USER
-

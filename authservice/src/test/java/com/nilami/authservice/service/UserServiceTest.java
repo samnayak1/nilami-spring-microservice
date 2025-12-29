@@ -74,7 +74,7 @@ class UserServiceTest {
             () -> userService.getUserDetails(testUserId)
         );
 
-        assertEquals("User already exists.", exception.getMessage());
+        assertEquals("User does not exist.", exception.getMessage());
         verify(userRepository, times(1)).findById(testUUID);
     }
 

@@ -29,7 +29,7 @@ public class UserServiceImplementation implements UserService{
         Optional<UserModel> user=userRepository.findById(UUID.fromString(userId));
         if(user.isEmpty()){
          System.out.println("ERROR WHILE FETCHING DATA: user does not exist for userId: "+userId);
-            throw new UserDoesNotExistException("User already exists.");
+            throw new UserDoesNotExistException("User does not exist.");
         }
 
 

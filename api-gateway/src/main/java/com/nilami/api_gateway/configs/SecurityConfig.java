@@ -22,24 +22,27 @@ public class SecurityConfig {
         this.authFilter = authFilter;
     }
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-            .csrf(AbstractHttpConfigurer::disable)
-            .authorizeHttpRequests(authorize -> authorize
-                .requestMatchers(
-                    "/api/v1/gateway/test",
-                    "/v3/api-docs/**",
-                    "/swagger-ui/**",
-                    "/swagger-ui.html",
-                    "/actuator/**"
-                ).permitAll()
-                .anyRequest().authenticated()
-            )
-            .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class);
+@Bean
+public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    http
+        .csrf(AbstractHttpConfigurer::disable)
+        .authorizeHttpRequests(authorize -> authorize
+            .requestMatchers("/api/v1/gateway/test", 
+                           "/api/v1/auth/signup", 
+                           "/api/v1/auth/login", 
+                           "/api/v1/auth/test",
+                           "api/v1/auth/validate-token",
+                           "/v3/api-docs/**",
+                           "/swagger-ui/**",
+                           "/actuator/**").permitAll()
+            .anyRequest().authenticated()
+        )
+        .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class);
 
-        return http.build();
-    }
+    return http.build();
+}
+
+    
 }
     
 

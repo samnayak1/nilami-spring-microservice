@@ -30,8 +30,24 @@ minikube start \
 docker build -t <imagename>:latest .
 docker tag <imagename>:latest <dockerhub-username>/<imagename>:<version>
 docker push <dockerhub-username>/<image name>:<version>
+run locally
+docker run --name <name of image> \
+  -p 8084:8084 \
+  <name of image>:latest
 
+using ecr
 
+sudo snap install aws-cli --classic
+aws ecr get-login-password
+aws configure
+aws sts get-caller-identity
+ aws ecr get-login-password --region <region> | docker login --username AWS --password-stdin <account number>.dkr.ecr.<region>.amazonaws.com
+get the account number <account number>
+
+docker tag <name of app>:latest \
+<AWS_ACCOUNT_ID>.dkr.ecr.ap-south-1.amazonaws.com/dev/samnayak1:v1
+docker push \
+<AWS_ACCOUNT_ID>.dkr.ecr.ap-south-1.amazonaws.com/dev/samnayak1:v1
 OR
 eval $(minikube docker-env)
 Build the Image: Build your image again (or ensure it's built). The image will be built directly into Minikube's accessible cache.
@@ -124,7 +140,7 @@ helm install external-secrets external-secrets/external-secrets \
 kubectl get pods -n vault
 
 kubectl port-forward -n vault svc/vault 8200:8200
-
+kubectl port-forward svc/api-gateway 8084:8084
 Token: root in dev
 
 kubectl exec -n vault -it vault-0 -- sh
@@ -235,3 +251,6 @@ kubectl exec -it catalog-db-1 -- psql -U postgres -c "\du"
 
 # Check what databases exist
 kubectl exec -it catalog-db-1 -- psql -U postgres -c "\l"
+
+# to start a tunnel for a service
+minikube service api-gateway

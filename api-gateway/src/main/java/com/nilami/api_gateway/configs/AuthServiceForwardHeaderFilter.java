@@ -29,6 +29,7 @@ public class AuthServiceForwardHeaderFilter extends OncePerRequestFilter {
     }
 
  @SuppressWarnings("null")
+
 @Override
 protected void doFilterInternal(HttpServletRequest request,
         HttpServletResponse response,
@@ -64,15 +65,27 @@ protected void doFilterInternal(HttpServletRequest request,
                 return;
             }
         } catch (Exception e) {
-           
             System.err.println("Token validation failed: " + e.getMessage());
+           
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            return;
         }
-    
-        SecurityContextHolder.clearContext();
     }
 
-    // No valid token or validation failed
-    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+   
+    filterChain.doFilter(request, response);
+}
+@SuppressWarnings("null")
+@Override
+protected boolean shouldNotFilter(HttpServletRequest request) {
+    String path = request.getRequestURI();
+    return path.startsWith("/api/v1/gateway/test") ||
+           path.startsWith("/api/v1/auth/signup") ||
+           path.startsWith("/api/v1/auth/login") ||
+           path.startsWith("/api/v1/auth/test") ||
+           path.startsWith("/v3/api-docs") ||
+           path.startsWith("/swagger-ui") ||
+           path.startsWith("/actuator");
 }
 
 }
