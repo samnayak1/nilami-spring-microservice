@@ -1,256 +1,222 @@
-# nilami-spring-microservice
-nilami with microservices
+# Nilami
 
+## Introduction
 
+Nilami is a microservices-based auction application designed for bidding. The platform allows users to bid for items while providing administrators with the tools to list and manage sales.
 
+The architecture is built using modern cloud-native technologies:
 
-To run tests
-mvn -Dtest=ItemServiceTest test
-mvn -Dtest=CategoryServiceTest test
+- **Backend:** Spring Boot, Spring Data JPA
+- **Database Migration:** Flyway
+- **Containerization:** Docker
+- **Orchestration:** Kubernetes (Minikube)
+- **Security & Identity:** Keycloak
+- **Secret Management:** Hashicorp Vault
 
+---
 
-To create a new service
-curl https://start.spring.io/starter.zip       -d language=java     -d type=maven-project     -d groupId=com.nilami     -d artifactId=registry-service     -d name=registry-service     -d packageName=com.nilami.registryservice     -d javaVersion=21     -o registry-service.zip
+## Prerequisites
 
+The following tools must be installed to run the project:
 
-
-
-To install
 1. Docker
 2. Minikube
 3. Helm
 4. Kubeseal
+
+---
+
+## Local Development Setup
+
+### Create a New Service
+
+To bootstrap a new microservice using the Spring Initializr API:
+
+```bash
+curl https://start.spring.io/starter.zip \
+     -d language=java \
+     -d type=maven-project \
+     -d groupId=com.nilami \
+     -d artifactId=<service-id> \
+     -d name=<name-of-service> \
+     -d packageName=com.nilami.<name-of-service> \
+     -d javaVersion=21 \
+     -o <filename>.zip
+```
+
+### Start Infrastructure
+
+Start the local Kubernetes cluster with the required resources:
+
+```bash
 minikube start \
   --driver=docker \
   --memory=4096 \
   --cpus=2 \
   --disk-size=25g
+```
 
+---
 
+## Image Management
+
+### Docker Hub
+
+```bash
 docker build -t <imagename>:latest .
 docker tag <imagename>:latest <dockerhub-username>/<imagename>:<version>
-docker push <dockerhub-username>/<image name>:<version>
-run locally
-docker run --name <name of image> \
+docker push <dockerhub-username>/<image-name>:<version>
+```
+
+### Run Locally (Standalone)
+
+```bash
+docker run --name <name-of-image> \
   -p 8084:8084 \
-  <name of image>:latest
+  <name-of-image>:latest
+```
 
-using ecr
+### AWS ECR (Alternative)
 
+```bash
+# Setup AWS CLI
 sudo snap install aws-cli --classic
-aws ecr get-login-password
 aws configure
-aws sts get-caller-identity
- aws ecr get-login-password --region <region> | docker login --username AWS --password-stdin <account number>.dkr.ecr.<region>.amazonaws.com
-get the account number <account number>
 
-docker tag <name of app>:latest \
-<AWS_ACCOUNT_ID>.dkr.ecr.ap-south-1.amazonaws.com/dev/samnayak1:v1
-docker push \
-<AWS_ACCOUNT_ID>.dkr.ecr.ap-south-1.amazonaws.com/dev/samnayak1:v1
-OR
+# Authentication
+aws ecr get-login-password --region <region> | \
+  docker login --username AWS --password-stdin \
+  <account-number>.dkr.ecr.<region>.amazonaws.com
+
+# Push to ECR
+docker tag <name-of-app>:latest \
+  <AWS_ACCOUNT_ID>.dkr.ecr.ap-south-1.amazonaws.com/dev/samnayak1:v1
+docker push <AWS_ACCOUNT_ID>.dkr.ecr.ap-south-1.amazonaws.com/dev/samnayak1:v1
+```
+
+### Local Minikube Registry (Alternative)
+
+To build directly into the Minikube node:
+
+```bash
 eval $(minikube docker-env)
-Build the Image: Build your image again (or ensure it's built). The image will be built directly into Minikube's accessible cache.
-
-Bash
-docker image list
-
-Reset Docker Environment: Switch back to your host's Docker daemon.
-
-Bash
-
+docker build -t <name-of-image>:latest .
 eval $(minikube docker-env -u)
+```
 
+---
 
-kubectl rollout restart deployment/catalog-server
+## Secret Management
 
- kubectl get pods --watch
- kubectl get pods -o wide
+### Hashicorp Vault (Current Standard)
 
-kubectl exec -it catalog-server-5979d49f96-r7jlp -- curl -v http://registry-service:8761/eureka
+The project uses Hashicorp Vault with the External Secrets Operator.
 
-
-
-kubectl describe pod <podname>
-
-to view by memory
-minikube addons enable metrics-server
- kubectl top pods --all-namespaces --sort-by=memory
- 
- unsealed
-
- apiVersion: v1
-kind: Secret
-metadata:
-  name: catalog-secret
-type: Opaque
-data:
-  POSTGRES_USER: <base64-encoded-POSTGRES_USER>
-  POSTGRES_PASSWORD: <base64-encoded-POSTGRES_PWD>
-  POSTGRES_DB: <base64-encoded-POSTGRES_DB>
-kubectl apply -f https://github.com/bitnami-labs/sealed-secrets/releases/latest/download/controller.yaml
-kubectl get crd | grep sealed
-
-kubeseal --format=yaml < catalog-secret-unsealed.yaml --controller-namespace kube-system \
-  --controller-name sealed-secrets > catalog-secret-sealed.yaml
-
-kubectl apply -f catalog-secret-sealed.yaml
-
-
-echo -n "secret" | base64
-
-
-KAFKA_ADMIN_PASSWORD=$(openssl rand -base64 32)
-KAFKA_USER1_PASSWORD=$(openssl rand -base64 32)
-KAFKA_CONTROLLER_PASSWORD=$(openssl rand -base64 32)
-
-echo "Admin: $KAFKA_ADMIN_PASSWORD"
-echo "User1: $KAFKA_USER1_PASSWORD"
-echo "Controller: $KAFKA_CONTROLLER_PASSWORD"
-
-kubectl create secret generic kafka-user-passwords \
-  --from-literal=client-passwords="$KAFKA_USER1_PASSWORD" \
-  --from-literal=system-user-password="$KAFKA_ADMIN_PASSWORD" \
-  --from-literal=controller-password="$KAFKA_CONTROLLER_PASSWORD" \
-  --namespace kafka \
-  --dry-run=client -o yaml > kafka-secret-temp.yaml
-
-
-for hashicorp
-
+```bash
+# Install Vault via Helm
 helm repo add hashicorp https://helm.releases.hashicorp.com
 helm repo update
+helm install vault hashicorp/vault -n vault --create-namespace -f vault-values.yaml
 
-helm show chart hashicorp/vault
-
-helm install vault hashicorp/vault \
-  --namespace vault \
-  --create-namespace \
-  --set server.dev.enabled=true
-
-  # for prod
-  helm install vault hashicorp/vault \
-  -n vault --create-namespace \
-  -f vault-values.yaml
-
+# Install External Secrets
+helm repo add external-secrets https://charts.external-secrets.io
 helm install external-secrets external-secrets/external-secrets \
-  --namespace external-secrets \
-  --create-namespace
+  --namespace external-secrets --create-namespace
 
-kubectl get pods -n vault
-
-kubectl port-forward -n vault svc/vault 8200:8200
-kubectl port-forward svc/api-gateway 8084:8084
-Token: root in dev
-
+# Vault Initialization & Unsealing
 kubectl exec -n vault -it vault-0 -- sh
-kubectl create secret generic vault-token \
-  --namespace external-secrets \
-  --from-literal=token=<token>
-kubectl exec -it -n vault vault-0 -- vault login <ROOT_TOKEN>
 vault operator init
+kubectl exec -n vault vault-0 -- vault status
+kubectl exec -n vault vault-0 -- vault operator unseal <key>
 
+# Configure Policy and Tokens
 kubectl cp vault-read.hcl vault/vault-0:/tmp/vault-read.hcl
 kubectl exec -it -n vault vault-0 -- vault policy write vault-read /tmp/vault-read.hcl
+kubectl create secret generic vault-token -n external-secrets --from-literal=token=<token>
+```
 
-check if sealed
-kubectl exec -n vault vault-0 -- vault status
+### Bitnami Sealed Secrets (Deprecated)
 
-kubectl exec -n vault vault-0 -- vault operator unseal <key> //with any three keys out of the 5 if threshold is 3
+> **Note:** This method is deprecated in favor of Hashicorp Vault.
 
-kubectl get secret kafka-consumer-credentials -o jsonpath='{.data.password}' | base64 -d
+```bash
+kubeseal --format=yaml < <unsealed-file>.yaml \
+  --controller-namespace kube-system \
+  --controller-name sealed-secrets > <sealed-file>.yaml
+kubectl apply -f <sealed-file>.yaml
+```
 
+---
 
-to force a sync
-kubectl annotate externalsecret kafka-consumer-credentials force-sync=$(date +%s) --overwrite
+## Infrastructure Services
 
- vault  kv put secret/bid-service KAFKA_PASSWORD=example
-# adding external secret
-helm repo add external-secrets https://charts.external-secrets.io
-helm repo update
+### Messaging (Kafka)
 
+```bash
+# Install
+helm install kafka bitnami/kafka -f kafka-values.yaml \
+  --namespace kafka --create-namespace
 
-  
-kubectl create secret generic vault-token \
-  -n external-secrets \
-  --from-literal=token=YOUR_VAULT_TOKEN
+# Upgrade
+helm upgrade kafka bitnami/kafka -f kafka-values.yaml --namespace kafka
 
-kubectl get externalsecret kafka-consumer-credentials
+# Check Environment
+kubectl exec <pod-name> -- printenv | grep KAFKA_BROKER
+```
 
-kubectl describe externalsecret kafka-consumer-credentials
+### Database (CloudNativePG)
 
-kubectl describe clustersecretstore vault-backend
-if you get a SecretSyncedError
-kubectl rollout restart deployment -n external-secrets
-
-kubectl logs vault-0 -n vault
-
-
-minikube addons enable storage-provisioner
-minikube addons enable default-storageclass
-# create secret
-
-
-
-# Delete the temporary file with plaintext
-rm kafka-secret-temp.yaml
-
-
-
-helm install kafka bitnami/kafka -f kafka-values.yaml --namespace <namespace> --create-namespace
-
-
-helm uninstall kafka --namespace kafka
-
-
-helm upgrade kafka bitnami/kafka \
-  -f kafka-values.yaml \
-  --namespace kafka
-
-
-  kubectl exec websocket-service-deployment-6f9b65bb6f-m5m58 -- printenv | 
-grep KAFKA_BROKER
-
-
-kubectl scale deployment <deployment-name> --replicas=0
-
-
-
-if minikube does not work
-sudo ip link set dev eth0 mtu 1350
-
-
-clear cache kubectl
-rm -rf ~/.kube/cache ~/.kube/http-cache
-
-
-
-# cnpg
-
-
+```bash
+# Install Operator
 kubectl apply --server-side -f \
   https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-1.28/releases/cnpg-1.28.0.yaml
-kubectl rollout status deployment \
-  -n cnpg-system cnpg-controller-manager
 
-kubectl get deployments -n cnpg-system
-
- to connect
-catalog-db-rw
-
-it automatically generates secrets
- kubectl get secrets
-
- to head into the database
-
- # Port forward if not already running
+# Database Access
 kubectl port-forward svc/catalog-db-rw 5432:5432 &
-
-# Connect as superuser and check if the user exists
-kubectl exec -it catalog-db-1 -- psql -U postgres -c "\du"
-
-# Check what databases exist
 kubectl exec -it catalog-db-1 -- psql -U postgres -c "\l"
+```
 
-# to start a tunnel for a service
-minikube service api-gateway
+---
+
+## Troubleshooting & Operations
+
+### Common Kubernetes Commands
+
+**Restart Deployment:**
+```bash
+kubectl rollout restart deployment/<deployment-name>
+```
+
+**Monitor Pods:**
+```bash
+kubectl get pods -w
+```
+
+**Internal Routing Test:**
+```bash
+kubectl exec -it <pod-name> -- curl -v http://registry-service:8761/eureka
+```
+
+**Port Forwarding:**
+```bash
+kubectl port-forward svc/api-gateway 8084:8084
+```
+
+**Resource Usage:**
+```bash
+minikube addons enable metrics-server
+kubectl top pods --all-namespaces --sort-by=memory
+```
+
+### Cleanup
+
+```bash
+# Delete Pods by scaling down
+kubectl scale deployment <deployment-name> --replicas=0
+
+# Clear Kubectl Cache
+rm -rf ~/.kube/cache ~/.kube/http-cache
+```
+
+---
+
