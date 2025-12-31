@@ -6,19 +6,24 @@ export const kafka = new Kafka({
   clientId: 'websocket-service',
   brokers: [process.env.KAFKA_BROKER!],
 
-  ssl: false, 
-  
-  logLevel: logLevel.DEBUG, 
-  
+  ssl: false,
+
+  logLevel: logLevel.DEBUG,
+
+   retry: {
+    initialRetryTime: 300,  
+    retries: 10,            
+    maxRetryTime: 30_000    
+  },
 
   sasl: {
-   
+
     //It is SASL plaintext btw
-    mechanism: 'plain', 
-    
+    mechanism: 'plain',
+
     //take from kubernets env file
-     username: process.env.KAFKA_USERNAME!,
-     password: `${process.env.KAFKA_PASSWORD}`
+    username: process.env.KAFKA_USERNAME!,
+    password: `${process.env.KAFKA_PASSWORD}`
   },
 });
 
@@ -42,8 +47,8 @@ export const startBidConsumer = async (onBid: (event: BidEvent) => void) => {
   });
 
   consumer.run({
-    eachMessage: async ({partition, topic, message }) => {
-    
+    eachMessage: async ({ partition, topic, message }) => {
+
       const parsed = JSON.parse(message.value!.toString());
       const event = BidEventSchema.parse(parsed);
       onBid(event);

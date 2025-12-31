@@ -31,6 +31,7 @@ public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Excepti
                            "/api/v1/auth/signup", 
                            "/api/v1/auth/login", 
                            "/api/v1/auth/test",
+                           "/api/v1/auth/refresh",
                            "api/v1/auth/validate-token",
                            "/v3/api-docs/**",
                            "/swagger-ui/**",

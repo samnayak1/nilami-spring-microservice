@@ -73,9 +73,4 @@ spec:
             requests:
               memory: "512Mi"
               cpu: "250m"
-          readinessProbe:
-            httpGet:
-              path: /actuator/health
-              port: 8082
-            initialDelaySeconds: 15
-            periodSeconds: 10
+

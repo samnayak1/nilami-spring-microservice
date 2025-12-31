@@ -48,12 +48,25 @@ curl https://start.spring.io/starter.zip \
 
 Start the local Kubernetes cluster with the required resources:
 
+With minikube
 ```bash
 minikube start \
   --driver=docker \
   --memory=4096 \
   --cpus=2 \
   --disk-size=25g
+```
+With Kind
+
+```bash
+curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.23.0/kind-linux-amd64
+chmod +x kind
+sudo mv kind /usr/local/bin/
+
+
+kind create cluster
+
+kubectl config current-context
 ```
 
 ---
@@ -117,7 +130,7 @@ The project uses Hashicorp Vault with the External Secrets Operator.
 helm repo add hashicorp https://helm.releases.hashicorp.com
 helm repo update
 helm install vault hashicorp/vault -n vault --create-namespace -f vault-values.yaml
-
+kubectl port-forward -n vault svc/vault 8200:8200
 # Install External Secrets
 helm repo add external-secrets https://charts.external-secrets.io
 helm install external-secrets external-secrets/external-secrets \
@@ -130,6 +143,8 @@ kubectl exec -n vault vault-0 -- vault status
 kubectl exec -n vault vault-0 -- vault operator unseal <key>
 
 # Configure Policy and Tokens
+kubectl exec -n vault -it vault-0 -- sh
+vault login <ROOT_TOKEN>
 kubectl cp vault-read.hcl vault/vault-0:/tmp/vault-read.hcl
 kubectl exec -it -n vault vault-0 -- vault policy write vault-read /tmp/vault-read.hcl
 kubectl create secret generic vault-token -n external-secrets --from-literal=token=<token>
@@ -175,6 +190,17 @@ kubectl apply --server-side -f \
 kubectl port-forward svc/catalog-db-rw 5432:5432 &
 kubectl exec -it catalog-db-1 -- psql -U postgres -c "\l"
 ```
+### Ingress
+```bash
+minikube addons enable ingress
+
+
+kubectl get pods -n ingress-nginx
+
+```
+
+
+
 
 ---
 
@@ -219,4 +245,11 @@ rm -rf ~/.kube/cache ~/.kube/http-cache
 ```
 
 ---
+
+To bash into a pod
+
+kubectl exec -it -n <namespace> <pod> -- bash
+
+To enter the database 
+psql -h localhost -p 5432 -U <user> -d <database>
 
