@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import com.nilami.catalogservice.controllers.requestTypes.CreateItemRequestType;
 import com.nilami.catalogservice.dto.ItemDTO;
+import com.nilami.catalogservice.dto.SimplifiedItemDTO;
 import com.nilami.catalogservice.exceptions.ItemNotFoundException;
 import com.nilami.catalogservice.models.Category;
 import com.nilami.catalogservice.models.Item;
@@ -112,5 +113,19 @@ public class ItemServiceImpl implements ItemService {
                 .collect(Collectors.toList());
 
         return new PageImpl<>(dtoList, pageable, itemsPage.getTotalElements());
+    }
+
+    @Override
+    public List<SimplifiedItemDTO> getItemDetailsGivenIds(List<String> itemIds) {
+                 
+               UUID[] itemUUIDs=itemIds.stream().map(itemId->{
+                return UUID.fromString(itemId);
+               }).collect(Collectors.toList()).toArray(UUID[]::new);
+                
+               List<SimplifiedItemDTO> items=itemRepository.findItemsByVirtualIdList(itemUUIDs);
+
+               return items;
+
+
     }
 }

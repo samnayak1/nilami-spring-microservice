@@ -38,8 +38,9 @@ import com.nilami.bidservice.dto.BidDTO;
 import com.nilami.bidservice.dto.ItemDTO;
 import com.nilami.bidservice.dto.Roles;
 import com.nilami.bidservice.dto.UserDTO;
-import com.nilami.bidservice.exceptions.BidPlacementException;
+import com.nilami.bidservice.exceptions.BidLessThanItemException;
 
+import com.nilami.bidservice.exceptions.InvalidBidException;
 import com.nilami.bidservice.models.Bid;
 import com.nilami.bidservice.repositories.BidRepository;
 import com.nilami.bidservice.services.BidEventPublisher;
@@ -186,7 +187,7 @@ class BidServiceTest {
         when(bidRepository.findTopByItemIdOrderByCreatedDesc(itemId))
                 .thenReturn(Optional.of(lastBid));
 
-        BidPlacementException exception = assertThrows(BidPlacementException.class,
+        InvalidBidException exception = assertThrows(InvalidBidException.class,
                 () -> bidService.placeBid(itemId.toString(), bidAmount, userId.toString()));
 
         assertTrue(exception.getMessage().contains("Bid price must be higher"));
@@ -203,7 +204,7 @@ class BidServiceTest {
 
         when(itemClient.getItem(itemId.toString())).thenReturn(item);
 
-        BidPlacementException exception = assertThrows(BidPlacementException.class,
+        BidLessThanItemException exception = assertThrows(BidLessThanItemException.class,
                 () -> bidService.placeBid(itemId.toString(), bidAmount, userId.toString()));
 
         assertTrue(exception.getMessage().contains("Price must be higher than the item's base price"));

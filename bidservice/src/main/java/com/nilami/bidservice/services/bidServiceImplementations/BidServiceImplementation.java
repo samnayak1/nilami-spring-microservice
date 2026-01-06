@@ -2,10 +2,13 @@ package com.nilami.bidservice.services.bidServiceImplementations;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+
+import java.util.HashMap;
 import java.util.List;
 
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
@@ -14,7 +17,10 @@ import com.nilami.bidservice.dto.ApiResponse;
 import com.nilami.bidservice.dto.BalanceReservationResponse;
 import com.nilami.bidservice.dto.BidDTO;
 import com.nilami.bidservice.dto.BidEventMessageQueuePayload;
+import com.nilami.bidservice.dto.GetBidsOfUserAlongWithHighestBidForItemResponseBody;
+import com.nilami.bidservice.dto.GetBidsOfUserWithItemDetails;
 import com.nilami.bidservice.dto.ItemDTO;
+import com.nilami.bidservice.dto.SimplifiedItemDTO;
 import com.nilami.bidservice.dto.UserDTO;
 import com.nilami.bidservice.exceptions.BidLessThanItemException;
 import com.nilami.bidservice.exceptions.BidPlacementException;
@@ -104,37 +110,34 @@ public class BidServiceImplementation implements BidService {
                 throw new BidPlacementException(
                         "Failed to commit balance reservation: " + commitResponse.getMessage());
             }
-            bidEventPublisher.sendBidEventToQueue(new BidEventMessageQueuePayload(UUID.fromString(itemId), placedBid.getId(), price, UUID.fromString(userId), Instant.now().toString()));
+            bidEventPublisher.sendBidEventToQueue(new BidEventMessageQueuePayload(
+                    UUID.fromString(itemId),
+                    placedBid.getId(),
+                    price,
+                    UUID.fromString(userId),
+                    Instant.now().toString()));
             return this.convertToBidDTO(placedBid);
 
-            // catch statement, cancel the reservation
+           
 
         } catch (Exception e) {
-            if (reservationId != null) {
-                try {
 
-                    ApiResponse<Void> cancelResponse = userClient.cancelBalanceReservation(reservationId);
-
-                    if (cancelResponse.getSuccess()) {
-                        log.info("Balance reservation cancelled successfully: {}" + reservationId);
-                    } else {
-                        log.error("Balance reservation cancelled unsuccessfully: {}" +
-                                reservationId + cancelResponse.getMessage());
-                    }
-                } catch (Exception rollbackException) {
-
-                    log.error("ROLLBACK EXPECTION" + rollbackException.getMessage());
-                    // Maybe a service to take manual intervention when this happens
-                }
+        if (reservationId != null) {
+            try {
+                userClient.cancelBalanceReservation(reservationId);
+            } catch (Exception rollbackException) {
+                log.error("Rollback failed", rollbackException);
             }
-
-            throw new BidPlacementException("Failed to place bid: " + e.getMessage(), e);
         }
+
+        throw e; 
     }
+}
 
     @Override
     public List<Bid> getBidsOfItems(String itemId) {
-        List<Bid> bidsOfItem = bidRepository.findByItemIdOrderByCreatedDesc(UUID.fromString(itemId));
+        List<Bid> bidsOfItem = bidRepository
+                .findByItemIdOrderByCreatedDesc(UUID.fromString(itemId));
 
         return bidsOfItem;
 
@@ -164,6 +167,50 @@ public class BidServiceImplementation implements BidService {
                 .creatorId(bid.getCreatorId())
                 .creatorName(userName)
                 .build();
+
+    }
+
+    @Override
+    public List<GetBidsOfUserWithItemDetails> getBidsOfUserAlongWithHighestBidForItem(
+            String userId) {
+
+        List<GetBidsOfUserAlongWithHighestBidForItemResponseBody> bidsOfUser = bidRepository
+                .getBidsOfUserAlongWithHighestBidForItemRepositoryQuery(UUID.fromString(userId));
+        log.debug("Bids returned from bid repository: " + bidsOfUser);
+        List<String> itemIds = bidsOfUser.stream().map(bid -> {
+            return bid.getItemId().toString();
+        }).distinct().collect(Collectors.toList());
+        log.debug("items: " + itemIds);
+        List<SimplifiedItemDTO> items = itemClient.getItemDetails(itemIds);
+        log.debug("items returned from itemClient: " + items);
+        HashMap<String, SimplifiedItemDTO> itemIdToDetailsMap = new HashMap<>();
+
+        for (SimplifiedItemDTO item : items) {
+            itemIdToDetailsMap.put(item.getId().toString(), item);
+        }
+
+        List<GetBidsOfUserWithItemDetails> bidsWithItemDetails = bidsOfUser.stream()
+                .map(bid -> new GetBidsOfUserWithItemDetails(
+                        bid.getId(),
+                        bid.getCreatorId(),
+                        bid.getItemId(),
+                        bid.getPrice(),
+                        bid.getCreatedAt(),
+                        bid.getIsHighestBid(),
+                        itemIdToDetailsMap.get(
+                                bid.getItemId().toString()).getTitle(),
+                        itemIdToDetailsMap.get(
+                                bid.getItemId().toString()).getBasePrice(),
+                        itemIdToDetailsMap.get(
+                                bid.getItemId().toString()).getBrand(),
+                        itemIdToDetailsMap.get(
+                                bid.getItemId().toString()).getExpiryTime(),
+                        itemIdToDetailsMap.get(
+                                bid.getItemId().toString()).isDeleted()
+
+                )).collect(Collectors.toList());
+
+        return bidsWithItemDetails;
 
     }
 

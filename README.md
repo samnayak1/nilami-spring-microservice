@@ -148,6 +148,10 @@ vault login <ROOT_TOKEN>
 kubectl cp vault-read.hcl vault/vault-0:/tmp/vault-read.hcl
 kubectl exec -it -n vault vault-0 -- vault policy write vault-read /tmp/vault-read.hcl
 kubectl create secret generic vault-token -n external-secrets --from-literal=token=<token>
+
+
+ kubectl get externalsecret 
+ kubectl describe externalsecret <secret-name>
 ```
 
 ### Bitnami Sealed Secrets (Deprecated)
@@ -211,6 +215,8 @@ kubectl get pods -n ingress-nginx
 **Restart Deployment:**
 ```bash
 kubectl rollout restart deployment/<deployment-name>
+
+kubectl rollout restart deployment external-secrets -n external-secrets
 ```
 
 **Monitor Pods:**
@@ -252,4 +258,8 @@ kubectl exec -it -n <namespace> <pod> -- bash
 
 To enter the database 
 psql -h localhost -p 5432 -U <user> -d <database>
+
+
+To install the ingress
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
 

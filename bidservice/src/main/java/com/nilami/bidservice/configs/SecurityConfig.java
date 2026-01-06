@@ -12,28 +12,27 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http,
-                                                   HeaderAuthenticationFilter headerAuthFilter)
-            throws Exception {
+        @Bean
+        public SecurityFilterChain securityFilterChain(HttpSecurity http,
+                        HeaderAuthenticationFilter headerAuthFilter)
+                        throws Exception {
 
-        http
+                http
+                                .csrf(AbstractHttpConfigurer::disable)
+                                .authorizeHttpRequests(auth -> auth
+                                                .requestMatchers(
+                                                                "/v3/api-docs/**",
+                                                                "/*/v3/api-docs/**",
+                                                                "/swagger-ui/**",
+                                                                "/*/swagger-ui/**",
+                                                                "/swagger-ui.html")
+                                                .permitAll()
 
-            .csrf(AbstractHttpConfigurer::disable)
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(
-                    "/v3/api-docs/**",
-                    "/swagger-ui/**",
-                    "/swagger-ui.html"
-                ).permitAll()
-        
-                .requestMatchers("/actuator/**").permitAll()
+                                                .requestMatchers("/actuator/**").permitAll()
 
-                .anyRequest().authenticated()
-            )
+                                                .anyRequest().authenticated())
+                                .addFilterBefore(headerAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
-            .addFilterBefore(headerAuthFilter, UsernamePasswordAuthenticationFilter.class);
-
-        return http.build();
-    }
+                return http.build();
+        }
 }

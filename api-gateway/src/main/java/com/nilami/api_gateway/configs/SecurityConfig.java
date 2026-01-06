@@ -10,8 +10,6 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-
-
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
@@ -22,28 +20,29 @@ public class SecurityConfig {
         this.authFilter = authFilter;
     }
 
-@Bean
-public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-    http
-        .csrf(AbstractHttpConfigurer::disable)
-        .authorizeHttpRequests(authorize -> authorize
-            .requestMatchers("/api/v1/gateway/test", 
-                           "/api/v1/auth/signup", 
-                           "/api/v1/auth/login", 
-                           "/api/v1/auth/test",
-                           "/api/v1/auth/refresh",
-                           "api/v1/auth/validate-token",
-                           "/v3/api-docs/**",
-                           "/swagger-ui/**",
-                           "/actuator/**").permitAll()
-            .anyRequest().authenticated()
-        )
-        .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class);
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers("/api/v1/gateway/test",
+                                "/api/v1/auth/signup",
+                                "/api/v1/auth/login",
+                                "/api/v1/auth/test",
+                                "/api/v1/auth/refresh",
+                                "/api/v1/auth/validate-token",
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/*/v3/api-docs/**",
+                                "/auth/v3/api-docs/**", 
+                                "/catalog/v3/api-docs/**", 
+                                "/bid/v3/api-docs/**",
+                                "/actuator/**")
+                        .permitAll()
+                        .anyRequest().authenticated())
+                .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class);
 
-    return http.build();
+        return http.build();
+    }
+
 }
-
-    
-}
-    
-

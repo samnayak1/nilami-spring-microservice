@@ -16,6 +16,7 @@ import com.nilami.catalogservice.controllers.requestTypes.AddPicturesToItemReque
 import com.nilami.catalogservice.controllers.requestTypes.CreateItemRequestType;
 import com.nilami.catalogservice.dto.ApiResponse;
 import com.nilami.catalogservice.dto.ItemDTO;
+import com.nilami.catalogservice.dto.SimplifiedItemDTO;
 import com.nilami.catalogservice.models.Item;
 import com.nilami.catalogservice.services.serviceAbstractions.FileUploadService;
 import com.nilami.catalogservice.services.serviceAbstractions.ItemService;
@@ -82,7 +83,7 @@ public class ItemController {
         }
     }
 
-
+//TODO: 1) get items by category, 2) get total items a. expiring soon, active 
 
 
     
@@ -125,4 +126,23 @@ public class ItemController {
             throw new RuntimeException("Failed to search items: " + e.getMessage(), e);
         }
     }
+
+
+    
+    @PostMapping("/details")
+    public ResponseEntity<List<SimplifiedItemDTO>> getItemDetails(
+            @RequestBody List<String> itemIds
+    ) {
+     try {
+        List<SimplifiedItemDTO> items =
+                itemService.getItemDetailsGivenIds(itemIds);
+
+        return ResponseEntity.ok(items);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to search items: " + e.getMessage(), e);
+        }
+    }
+
+
+
 }

@@ -79,13 +79,20 @@ protected void doFilterInternal(HttpServletRequest request,
 @Override
 protected boolean shouldNotFilter(HttpServletRequest request) {
     String path = request.getRequestURI();
+
     return path.startsWith("/api/v1/gateway/test") ||
            path.startsWith("/api/v1/auth/signup") ||
            path.startsWith("/api/v1/auth/login") ||
            path.startsWith("/api/v1/auth/test") ||
-           path.startsWith("/v3/api-docs") ||
+           path.startsWith("/api/v1/auth/refresh") ||
+           path.startsWith("/api/v1/auth/validate-token") ||
+           path.contains("/v3/api-docs") ||    
            path.startsWith("/swagger-ui") ||
+
+           path.matches(".*/swagger-ui.*") ||   
            path.startsWith("/actuator");
 }
+
+
 
 }

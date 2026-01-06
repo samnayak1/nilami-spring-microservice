@@ -2,12 +2,15 @@ package com.nilami.bidservice.services.externalClients.fallback;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 
 import com.nilami.bidservice.dto.ItemDTO;
+import com.nilami.bidservice.dto.SimplifiedItemDTO;
 import com.nilami.bidservice.services.externalClients.ItemClient;
 
 import lombok.extern.slf4j.Slf4j;
@@ -41,5 +44,11 @@ public class ItemClientFallback implements ItemClient {
     @Override
     public Boolean checkExpiry(String itemId) {
         return false;
+    }
+
+    @Override
+    public List<SimplifiedItemDTO> getItemDetails(List<String> itemIds) {
+         List<SimplifiedItemDTO> emptyItemList=new ArrayList<>();
+         return emptyItemList;
     }
 }
