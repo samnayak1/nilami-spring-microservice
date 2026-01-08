@@ -26,7 +26,11 @@ public interface BidRepository extends JpaRepository<Bid,UUID>{
      Optional<Bid> findById(@NonNull UUID id);
 
     List<Bid> findByItemIdOrderByCreatedDesc(UUID itemId);
-
+ 
+    Optional<Bid> findTopByItemIdAndCreatorIdOrderByCreatedDesc(
+        UUID itemId,
+        UUID creatorId
+    );
 
     @Query(value="""
             SELECT 

@@ -34,8 +34,10 @@ spec:
         - name: keycloak
           image: quay.io/keycloak/keycloak:24.0.1
           args:
-            - start-dev
-            - --import-realm
+            - start
+            - --import-realm  
+            - --http-enabled=true
+            - --hostname-strict-https=false
           ports:
             - containerPort: 8080
           env:
@@ -43,6 +45,12 @@ spec:
               value: POSTGRES
             - name: DB_ADDR
               value: keycloak-db-rw
+            - name: KC_HTTP_ENABLED
+              value: "true"
+            - name: KC_HOSTNAME_STRICT_HTTPS
+              value: "false"
+            - name: KC_PROXY
+              value: edge
             - name: DB_DATABASE
               valueFrom:
                 configMapKeyRef:
@@ -83,3 +91,4 @@ spec:
             name: keycloak-realm
         - name: realm-final
           emptyDir: {}
+      

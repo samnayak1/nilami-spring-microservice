@@ -5,6 +5,7 @@ metadata:
 data:
   initial-realm.json: |
     {
+      "id": "nilami-microservices-security-realm",
       "realm": "nilami-microservices-security-realm",
       "enabled": true,
       "roles": {

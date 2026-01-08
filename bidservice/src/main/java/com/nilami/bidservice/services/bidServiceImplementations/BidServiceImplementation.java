@@ -55,6 +55,10 @@ public class BidServiceImplementation implements BidService {
                 .map(this::convertToBidDTO);
     }
 
+    public Optional<Bid> getLatestBidOfItemAndUserIfExists(String itemId,String userId){
+        return bidRepository.findTopByItemIdAndCreatorIdOrderByCreatedDesc(UUID.fromString(itemId),UUID.fromString(userId));
+    }
+
     @Override
     public BidDTO placeBid(String itemId, BigDecimal price, String userId) throws Exception {
         String reservationId = null;
@@ -83,8 +87,18 @@ public class BidServiceImplementation implements BidService {
             if (isExpired == null || isExpired) {
                 throw new ItemExpiredException("Item " + itemId + " has expired. Bidding is closed.");
             }
+
+            BigDecimal priceUserHasToBid=BigDecimal.valueOf(0.0);
+            // If a user has already bid for an item and they bid again, then do not subtract the amount from their balance but rather the difference
+
+            Optional<Bid> latestBidOfUser=this.getLatestBidOfItemAndUserIfExists(itemId, userId);
+
+            if(!latestBidOfUser.isEmpty()){
+                priceUserHasToBid=latestBidOfUser.get().getPrice();
+            }
+             
             // We first reserve a certain amount in our user's database
-            BalanceReservationRequest reserveRequest = new BalanceReservationRequest(userId, price, idempotentKey);
+            BalanceReservationRequest reserveRequest = new BalanceReservationRequest(userId, price.subtract(priceUserHasToBid), idempotentKey);
 
             ApiResponse<BalanceReservationResponse> reservationResponse = userClient.reserveBalance(reserveRequest);
             log.debug("The balance reservation for itemId {} and for user {} for price {} is evaluated to {}", itemId,

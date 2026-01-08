@@ -65,7 +65,12 @@ spec:
                 secretKeyRef:
                   name: bid-secret
                   key: POSTGRES_PASSWORD
-
+            - name: KAFKA_CLIENT_JAAS_CONFIG
+              valueFrom:
+                 configMapKeyRef: 
+                   name: bid-service-config
+                   key: KAFKA_CLIENT_JAAS_CONFIG
+                
           resources:
             limits:
               memory: "768Mi"

@@ -150,8 +150,18 @@ kubectl exec -it -n vault vault-0 -- vault policy write vault-read /tmp/vault-re
 kubectl create secret generic vault-token -n external-secrets --from-literal=token=<token>
 
 
+#to verify
  kubectl get externalsecret 
- kubectl describe externalsecret <secret-name>
+ kubectl describe externalsecret <secret-name> -n <namspace>
+ kubectl describe ClusterSecretStore vault-backend
+
+#To view all secrets with their 
+ kubectl get externalsecrets -A
+
+#To restart the external secret
+ kubectl rollout restart deployment external-secrets -n external-secrets
+
+ 
 ```
 
 ### Bitnami Sealed Secrets (Deprecated)
@@ -262,4 +272,7 @@ psql -h localhost -p 5432 -U <user> -d <database>
 
 To install the ingress
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+
+
+
 

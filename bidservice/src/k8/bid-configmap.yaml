@@ -12,6 +12,9 @@ data:
   # add ,kafka-1.kafka-headless.kafka.svc.cluster.local:9092,kafka-2.kafka-headless.kafka.svc.cluster.local:9092 for more replicas
 
   KAFKA_BROKER_SERVICE: kafka-0.kafka-headless.kafka.svc.cluster.local:9092
+
+
+  KAFKA_CLIENT_JAAS_CONFIG: 'org.apache.kafka.common.security.plain.PlainLoginModule required username="${KAFKA_USERNAME}" password="${KAFKA_PASSWORD}";'
   
 
   # headless service allows brokers to advertise their unique, predictable FQDN and that is why we use the headless service
