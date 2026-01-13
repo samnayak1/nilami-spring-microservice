@@ -2,23 +2,21 @@ package com.nilami.bidservice.models;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-
 import java.util.UUID;
 
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.UuidGenerator;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import jakarta.persistence.Table;
 
 @Getter
 @Setter
@@ -27,30 +25,28 @@ import lombok.Setter;
 @NoArgsConstructor
 @Entity
 @Builder
-@Table(name = "bids")
-public class Bid {
+@Table(name = "idempotent_keys")
+public class IdempotentKeys {
+
+  // the id will be our idempotent key
   @Id
   @UuidGenerator
   private UUID id;
 
-  @CreationTimestamp
-  @Column(name = "created_at", nullable = false, updatable = false)
-  private Instant created;
-
-  @UpdateTimestamp
-  @Column(name = "updated_at")
-  private Instant updated;
-
   @Column(nullable = false)
-  private UUID itemId;
+  private BigDecimal bidAmount;
 
   @Column(nullable = false)
   private UUID creatorId;
 
   @Column(nullable = false)
-  private BigDecimal price;
+  private UUID itemId;
+
+  @CreationTimestamp
+  @Column(name = "created_at", nullable = false, updatable = false)
+  private Instant created;
 
   @Column(nullable = false)
-  private UUID sagaId;
+  private BidStatus bidStatus;
 
 }

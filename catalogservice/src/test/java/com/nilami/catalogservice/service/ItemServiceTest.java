@@ -15,8 +15,11 @@ import java.math.BigDecimal;
 import java.net.URI;
 
 import java.time.Instant;
+
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -32,11 +35,14 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
 import com.nilami.catalogservice.controllers.requestTypes.CreateItemRequestType;
+import com.nilami.catalogservice.dto.ApiResponse;
+import com.nilami.catalogservice.dto.GetHighestBidsRequest;
 import com.nilami.catalogservice.dto.ItemDTO;
 import com.nilami.catalogservice.models.Category;
 import com.nilami.catalogservice.models.Item;
 import com.nilami.catalogservice.repositories.CategoryRepository;
 import com.nilami.catalogservice.repositories.ItemRepository;
+import com.nilami.catalogservice.services.externalClients.BidClient;
 import com.nilami.catalogservice.services.serviceAbstractions.FileUploadService;
 import com.nilami.catalogservice.services.serviceImplementations.ItemServiceImpl;
 
@@ -48,15 +54,17 @@ public class ItemServiceTest {
     @Mock
     private CategoryRepository categoryRepository;
 
-    
+
+    @Mock
+    private BidClient bidClient;
 
     @InjectMocks
     private ItemServiceImpl itemService;
-    
-   
+
+
+
     @Mock
     private FileUploadService fileService;
-      
 
     private Category category;
     private Item item;
@@ -86,16 +94,15 @@ public class ItemServiceTest {
     }
 
     @Test
-    void testGetItem() throws Exception{
+    void testGetItem() throws Exception {
         when(itemRepository.findById(item.getId())).thenReturn(Optional.of(item));
-         when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic1.png"))
-            .thenReturn(URI.create("https://mock-s3.com/pic1.png").toURL());
+        when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic1.png"))
+                .thenReturn(URI.create("https://mock-s3.com/pic1.png").toURL());
         when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic2.jpg"))
-            .thenReturn(URI.create("https://mock-s3.com/pic2.jpg").toURL());
-
+                .thenReturn(URI.create("https://mock-s3.com/pic2.jpg").toURL());
 
         ItemDTO result = itemService.getItem(item.getId().toString());
-       
+
         assertNotNull(result);
         assertEquals("Laptop", result.getTitle());
         verify(itemRepository, times(1)).findById(item.getId());
@@ -107,14 +114,32 @@ public class ItemServiceTest {
     void testGetAllItems() throws Exception {
         Page<Item> page = new PageImpl<>(List.of(item));
         when(itemRepository.findAll(PageRequest.of(0, 10))).thenReturn(page);
-     when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic1.png"))
-            .thenReturn(URI.create("https://mock-s3.com/pic1.png").toURL());
-       when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic2.jpg"))
-            .thenReturn(URI.create("https://mock-s3.com/pic2.jpg").toURL());
+        when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic1.png"))
+                .thenReturn(URI.create("https://mock-s3.com/pic1.png").toURL());
+        when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic2.jpg"))
+                .thenReturn(URI.create("https://mock-s3.com/pic2.jpg").toURL());
 
-            
-        Page<ItemDTO> result = itemService.getAllItems(PageRequest.of(0, 10));
+        UUID item2Id=UUID.randomUUID();
+        UUID item3Id=UUID.randomUUID();
+
+                
       
+        Map<String, BigDecimal> highestBidsMap = new HashMap<>();
+        highestBidsMap.put(item.getId().toString(), new BigDecimal("100.00"));
+        highestBidsMap.put(item2Id.toString(), new BigDecimal("250.50"));
+        highestBidsMap.put(item3Id.toString(), new BigDecimal("75.25"));
+        
+        ApiResponse<Map<String, BigDecimal>> mockResponse = 
+            new ApiResponse<>(true, "Success", highestBidsMap);
+        
+
+        
+        // Mock the client call
+        when(bidClient.getHighestBidsForItems(any(GetHighestBidsRequest.class)))
+            .thenReturn(mockResponse);
+
+        Page<ItemDTO> result = itemService.getAllItems(null,PageRequest.of(0, 10));
+
         assertEquals(1, result.getTotalElements());
         assertEquals("Laptop", result.getContent().get(0).getTitle());
         verify(itemRepository, times(1)).findAll(any(PageRequest.class));
@@ -146,8 +171,8 @@ public class ItemServiceTest {
                 .description("Smartphone")
                 .basePrice(BigDecimal.valueOf(800))
                 .brand("Samsung")
-    
-              //  .pictureIds(List.of("pic3", "pic4"))
+
+                // .pictureIds(List.of("pic3", "pic4"))
                 .categoryId(category.getId().toString())
                 .expiryTime(new Date(System.currentTimeMillis() + 200000))
                 .build();
@@ -155,37 +180,33 @@ public class ItemServiceTest {
         when(categoryRepository.findById(category.getId())).thenReturn(Optional.of(category));
         when(itemRepository.save(any(Item.class))).thenReturn(item);
 
-        Item result = itemService.createItem(request,"user456");
+        Item result = itemService.createItem(request, "user456");
 
         assertNotNull(result);
         assertEquals("Laptop", result.getTitle()); // saved mock returns "item" object
         verify(itemRepository, times(1)).save(any(Item.class));
     }
 
-@Test
-void testSearchItem() throws Exception{
-    Pageable pageable = PageRequest.of(0, 10);
-    
-    when(itemRepository.findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
-            "lap", "lap", pageable))
-        .thenReturn(new PageImpl<>(List.of(item), pageable, 1));
+    @Test
+    void testSearchItem() throws Exception {
+        Pageable pageable = PageRequest.of(0, 10);
 
-    when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic1.png"))
-            .thenReturn(URI.create("https://mock-s3.com/pic1.png").toURL());
-     when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic2.jpg"))
-            .thenReturn(URI.create("https://mock-s3.com/pic2.jpg").toURL());
+        when(itemRepository.findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
+                "lap", "lap", pageable))
+                .thenReturn(new PageImpl<>(List.of(item), pageable, 1));
 
+        when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic1.png"))
+                .thenReturn(URI.create("https://mock-s3.com/pic1.png").toURL());
+        when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic2.jpg"))
+                .thenReturn(URI.create("https://mock-s3.com/pic2.jpg").toURL());
 
+        Page<ItemDTO> results = itemService.searchItem("lap", pageable);
 
-    Page<ItemDTO> results = itemService.searchItem("lap", pageable);
+        assertEquals(1, results.getNumberOfElements());
+        assertEquals("Laptop", results.toList().get(0).getTitle());
 
-    assertEquals(1, results.getNumberOfElements());
-    assertEquals("Laptop", results.toList().get(0).getTitle());
-
-    verify(itemRepository, times(1))
-        .findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase("lap", "lap", pageable);
-}
-
-
+        verify(itemRepository, times(1))
+                .findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase("lap", "lap", pageable);
+    }
 
 }

@@ -18,3 +18,5 @@ data:
   
 
   # headless service allows brokers to advertise their unique, predictable FQDN and that is why we use the headless service
+
+  GATEWAY_URL: "http://api-gateway.local"

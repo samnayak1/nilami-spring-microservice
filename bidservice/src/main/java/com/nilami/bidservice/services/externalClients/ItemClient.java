@@ -13,9 +13,9 @@ import com.nilami.bidservice.configs.FeignHeaderForwardingConfig;
 
 import com.nilami.bidservice.dto.ItemDTO;
 import com.nilami.bidservice.dto.SimplifiedItemDTO;
-import com.nilami.bidservice.services.externalClients.fallback.ItemClientFallback;
 
-@FeignClient(name = "CATALOG-SERVICE", configuration = FeignHeaderForwardingConfig.class, fallback = ItemClientFallback.class)
+
+@FeignClient(name = "CATALOG-SERVICE", configuration = FeignHeaderForwardingConfig.class)
 public interface ItemClient {
 
     @GetMapping("/api/v1/items/{id}")

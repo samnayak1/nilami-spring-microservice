@@ -56,6 +56,15 @@ spec:
                   name: auth-service-config
                   key: EUREKA_HOST
 
+  
+            - name: GATEWAY_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: auth-service-config
+                  key: GATEWAY_URL
+
+              
+
             - name: KEYCLOAK_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
@@ -82,3 +91,5 @@ spec:
                 secretKeyRef:
                   name: auth-service-secrets
                   key: AUTH_SERVER_DB_USER
+
+                

@@ -50,10 +50,12 @@ public class ItemController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<ItemDTO>> getAllItems(Pageable pageable, @RequestHeader("X-User-Id") String userId) {
+    public ResponseEntity<Page<ItemDTO>> getAllItems(Pageable pageable,
+         @RequestHeader("X-User-Id") String userId,
+        @RequestParam(required = false) String categoryId) {
         try {
             System.out.println("User: " + userId + " requested to get all items");
-            return ResponseEntity.ok(itemService.getAllItems(pageable));
+            return ResponseEntity.ok(itemService.getAllItems(categoryId, pageable));
         } catch (Exception e) {
             throw new RuntimeException("Failed to retrieve items: " + e.getMessage(), e);
         }
@@ -83,7 +85,7 @@ public class ItemController {
         }
     }
 
-//TODO: 1) get items by category, 2) get total items a. expiring soon, active 
+
 
 
     

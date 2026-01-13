@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: bid-server
-          image: samnayak1/bidservice:1.0.9
+          image: samnayak1/bidservice:1.0.11
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8082
@@ -34,6 +34,12 @@ spec:
                 configMapKeyRef:
                   name: bid-service-config
                   key: EUREKA_HOST
+
+            - name: GATEWAY_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: bid-service-config
+                  key: GATEWAY_URL
             - name: KAFKA_BROKER_SERVICE
               valueFrom:
                 configMapKeyRef:

@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: catalog-server-container
-        image: samnayak1/catalogbackend:1.0.2
+        image: samnayak1/catalogbackend:1.0.3
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8085
@@ -43,6 +43,12 @@ spec:
             configMapKeyRef:
               name: catalog-config-map      
               key: EUREKA_HOST
+
+        - name: GATEWAY_URL
+          valueFrom:
+            configMapKeyRef:
+              name: catalog-config-map
+              key: GATEWAY_URL
 
 
         - name: POSTGRES_USER

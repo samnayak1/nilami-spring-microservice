@@ -2,16 +2,18 @@ package com.nilami.bidservice.services.bidServiceImplementations;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.nilami.bidservice.controllers.requestTypes.BalanceRequest;
 import com.nilami.bidservice.controllers.requestTypes.BalanceReservationRequest;
 import com.nilami.bidservice.dto.ApiResponse;
 import com.nilami.bidservice.dto.BalanceReservationResponse;
@@ -19,15 +21,27 @@ import com.nilami.bidservice.dto.BidDTO;
 import com.nilami.bidservice.dto.BidEventMessageQueuePayload;
 import com.nilami.bidservice.dto.GetBidsOfUserAlongWithHighestBidForItemResponseBody;
 import com.nilami.bidservice.dto.GetBidsOfUserWithItemDetails;
+import com.nilami.bidservice.dto.GetHighestBidAlongWithItemIds;
+import com.nilami.bidservice.dto.GetIdempotentKeyResponse;
 import com.nilami.bidservice.dto.ItemDTO;
 import com.nilami.bidservice.dto.SimplifiedItemDTO;
 import com.nilami.bidservice.dto.UserDTO;
 import com.nilami.bidservice.exceptions.BidLessThanItemException;
-import com.nilami.bidservice.exceptions.BidPlacementException;
+
+import com.nilami.bidservice.exceptions.IdempotentKeyException;
 import com.nilami.bidservice.exceptions.InvalidBidException;
 import com.nilami.bidservice.exceptions.ItemExpiredException;
+
+import com.nilami.bidservice.exceptions.NoIdempotentKeyException;
+
 import com.nilami.bidservice.models.Bid;
+import com.nilami.bidservice.models.BidStatus;
+import com.nilami.bidservice.models.IdempotentKeys;
+import com.nilami.bidservice.models.SagaLogs;
+import com.nilami.bidservice.models.SagaState;
 import com.nilami.bidservice.repositories.BidRepository;
+import com.nilami.bidservice.repositories.IdempotentKeyRepository;
+import com.nilami.bidservice.repositories.SagaLogsRepository;
 import com.nilami.bidservice.services.BidEventPublisher;
 import com.nilami.bidservice.services.BidService;
 import com.nilami.bidservice.services.externalClients.ItemClient;
@@ -43,6 +57,10 @@ public class BidServiceImplementation implements BidService {
 
     private final BidRepository bidRepository;
 
+    private final IdempotentKeyRepository idempotentKeyRepository;
+
+    private final SagaLogsRepository sagaLogsRepository;
+
     private final UserClient userClient;
 
     private final ItemClient itemClient;
@@ -55,16 +73,21 @@ public class BidServiceImplementation implements BidService {
                 .map(this::convertToBidDTO);
     }
 
-    public Optional<Bid> getLatestBidOfItemAndUserIfExists(String itemId,String userId){
-        return bidRepository.findTopByItemIdAndCreatorIdOrderByCreatedDesc(UUID.fromString(itemId),UUID.fromString(userId));
+    public Optional<Bid> getLatestBidOfItemAndUserIfExists(String itemId, String userId) {
+        return bidRepository.findTopByItemIdAndCreatorIdOrderByCreatedDesc(UUID.fromString(itemId),
+                UUID.fromString(userId));
     }
 
     @Override
-    public BidDTO placeBid(String itemId, BigDecimal price, String userId) throws Exception {
+    public BidDTO placeBid(String itemId, BigDecimal price, String userId, String idempotentKey) throws Exception {
         String reservationId = null;
+        UUID sagaId = UUID.randomUUID();
+        BigDecimal priceUserHasToBid = BigDecimal.valueOf(0.0);
         try {
-            String idempotentKey = UUID.randomUUID().toString();
+
             // check for last bid and that bid should not exceed previous bid
+            // check all contraints that the bid has to make like it's past the expiry date
+
             log.debug("before getting last bid of item {} with price {} and userId", itemId, price, userId);
             Optional<BidDTO> lastBid = this.getLastBid(itemId);
 
@@ -82,71 +105,202 @@ public class BidServiceImplementation implements BidService {
             }
             log.debug("Item id {} fetched with item name", itemId, item.getTitle());
 
-            Boolean isExpired = itemClient.checkExpiry(itemId);
+            Boolean isExpired = item.getExpiryTime().before(Date.from(Instant.now()));
             log.debug("The expiry of the item {} is evaluated to {}", itemId, isExpired);
-            if (isExpired == null || isExpired) {
+            if (isExpired) {
                 throw new ItemExpiredException("Item " + itemId + " has expired. Bidding is closed.");
             }
 
-            BigDecimal priceUserHasToBid=BigDecimal.valueOf(0.0);
-            // If a user has already bid for an item and they bid again, then do not subtract the amount from their balance but rather the difference
+            // If a user has already bid for an item and they bid again, then the amount to
+            // subtract from their balance is the
+            // difference in the amount they already bid and the current bid.
 
-            Optional<Bid> latestBidOfUser=this.getLatestBidOfItemAndUserIfExists(itemId, userId);
+            Optional<Bid> latestBidOfUser = this.getLatestBidOfItemAndUserIfExists(itemId, userId);
 
-            if(!latestBidOfUser.isEmpty()){
-                priceUserHasToBid=latestBidOfUser.get().getPrice();
+            BigDecimal balanceReservationSubtrahend = BigDecimal.valueOf(0.0);
+            if (!latestBidOfUser.isEmpty()) {
+                balanceReservationSubtrahend = price.subtract(latestBidOfUser.get().getPrice());
+            } else {
+                balanceReservationSubtrahend = price;
             }
-             
-            // We first reserve a certain amount in our user's database
-            BalanceReservationRequest reserveRequest = new BalanceReservationRequest(userId, price.subtract(priceUserHasToBid), idempotentKey);
+
+            priceUserHasToBid = balanceReservationSubtrahend;
+
+            // make the idempotent key checks
+            Optional<IdempotentKeys> keyResponseFromDatabase = idempotentKeyRepository
+                    .findById(UUID.fromString(idempotentKey));
+
+            if (keyResponseFromDatabase.isEmpty()) {
+                throw new NoIdempotentKeyException("The idempotent key does not exist.");
+            }
+
+            if (keyResponseFromDatabase.isPresent()) {
+                if (keyResponseFromDatabase
+                        .get()
+                        .getBidStatus() == BidStatus.CREATING
+                        || keyResponseFromDatabase
+                                .get()
+                                .getBidStatus() == BidStatus.COMPLETED
+                        ||
+                        keyResponseFromDatabase
+                                .get()
+                                .getBidStatus() == BidStatus.REJECTED) {
+
+                    throw new IdempotentKeyException("The bid related to this idempotent key is already in use.");
+
+                }
+            }
+
+            // Actual bid process happens from here onwards
+            // Add Saga logs
+
+            IdempotentKeys entity = keyResponseFromDatabase.get();
+
+            // pending to creating i.e the rollback starts now if fails
+            if (entity.getBidStatus() == BidStatus.PENDING) {
+                entity.setBidStatus(BidStatus.CREATING);
+                idempotentKeyRepository.save(entity);
+            }
+
+            // add to SAGA with the status that we are creating a new Bid
+
+            SagaLogs saga = SagaLogs.builder()
+                    .sagaId(sagaId)
+                    .itemId(UUID.fromString(itemId))
+                    .userId(UUID.fromString(userId))
+                    .currentState(SagaState.STARTED)
+                    .bidAmount(price)
+                    .build();
+
+            sagaLogsRepository.save(saga);
+
+            // We first reserve a certain amount (bid amount - previous user's bid if
+            // exists) in our user's database
+            BalanceReservationRequest reserveRequest = new BalanceReservationRequest(userId,
+                    priceUserHasToBid, idempotentKey);
 
             ApiResponse<BalanceReservationResponse> reservationResponse = userClient.reserveBalance(reserveRequest);
+
             log.debug("The balance reservation for itemId {} and for user {} for price {} is evaluated to {}", itemId,
                     userId, reserveRequest.getAmount(), reservationResponse.getSuccess());
-            if (!reservationResponse.getSuccess() || reservationResponse.getData() == null) {
-                throw new BidPlacementException(
-                        "Failed to reserve balance: " + reservationResponse.getMessage());
-            }
+
+            sagaLogsRepository.updateStatus(sagaId, SagaState.FUNDS_RESERVED);
             reservationId = reservationResponse.getData().getReservationId();
             Bid placedBidEntity = Bid.builder()
                     .itemId(UUID.fromString(itemId))
                     .price(price)
                     .creatorId(UUID.fromString(userId))
+                    .sagaId(sagaId)
                     .build();
 
             Bid placedBid = bidRepository.save(placedBidEntity);
+
+            sagaLogsRepository.updateStatus(sagaId, SagaState.BID_PLACED);
             log.debug("bid placed for item: " + placedBid.getItemId());
             ApiResponse<Void> commitResponse = userClient.commitBalanceReservation(reservationId);
             log.debug("bid commited for item: " + placedBid.getItemId() + "response evaluated to "
                     + commitResponse.getSuccess());
-            if (!commitResponse.getSuccess()) {
+            sagaLogsRepository.updateStatus(sagaId, SagaState.FUNDS_COMMITED);
 
-                throw new BidPlacementException(
-                        "Failed to commit balance reservation: " + commitResponse.getMessage());
-            }
+            // TODO: put in outbox pattern
             bidEventPublisher.sendBidEventToQueue(new BidEventMessageQueuePayload(
                     UUID.fromString(itemId),
                     placedBid.getId(),
                     price,
                     UUID.fromString(userId),
                     Instant.now().toString()));
-            return this.convertToBidDTO(placedBid);
 
-           
+            entity.setBidStatus(BidStatus.COMPLETED);
+            idempotentKeyRepository.save(entity);
+
+            sagaLogsRepository.updateStatus(sagaId, SagaState.COMPLETED);
+
+            return this.convertToBidDTO(placedBid);
 
         } catch (Exception e) {
 
-        if (reservationId != null) {
-            try {
-                userClient.cancelBalanceReservation(reservationId);
-            } catch (Exception rollbackException) {
-                log.error("Rollback failed", rollbackException);
-            }
-        }
+            if (!(e instanceof NoIdempotentKeyException || e instanceof IdempotentKeyException)) {
+                Optional<IdempotentKeys> keyResponseFromDatabase = idempotentKeyRepository
+                        .findById(UUID.fromString(idempotentKey));
 
-        throw e; 
+                if (keyResponseFromDatabase.isPresent()) {
+                    IdempotentKeys entity = keyResponseFromDatabase.get();
+                    entity.setBidStatus(BidStatus.REJECTED);
+                    idempotentKeyRepository.save(entity);
+                }
+            }
+
+            Optional<SagaLogs> sagaOptional = sagaLogsRepository.findById(sagaId);
+            List<SagaState> eventsToRevert = new ArrayList<SagaState>();
+            if (sagaOptional.isPresent()) {
+                SagaLogs saga = sagaOptional.get();
+                switch (saga.getCurrentState()) {
+
+                    // create an array, add the cases when loop, and then finally create a function
+                    // that just loops through
+                    case STARTED:
+                        // nothing to do because we just started
+                        break;
+                    case BID_PLACED:
+                        // unplace the bid
+                        eventsToRevert.add(SagaState.BID_PLACED);
+
+                        // unreserve the funds
+                        eventsToRevert.add(SagaState.FUNDS_RESERVED);
+                        break;
+
+                    case FUNDS_COMMITED:
+                        // uncommit the funds
+                        eventsToRevert.add(SagaState.FUNDS_COMMITED);
+                        // unplace the bid
+                        eventsToRevert.add(SagaState.BID_PLACED);
+                        // unreserve the funds
+                        eventsToRevert.add(SagaState.FUNDS_RESERVED);
+
+                        break;
+                    case FUNDS_RESERVED:
+
+                        // unreserve the fund
+                        eventsToRevert.add(SagaState.FUNDS_RESERVED);
+                        break;
+                    default:
+                        log.error(
+                                "Unexpected case in the bid service catch block switch statement. Please look into this. ");
+                        break;
+
+                }
+
+                String finalReservationId = reservationId;
+                BigDecimal finalPriceUserHasToBid = priceUserHasToBid;
+
+                eventsToRevert.forEach(event -> {
+                    switch (event) {
+                        case BID_PLACED:
+                            this.deleteBid(sagaId.toString());
+                            break;
+                        case FUNDS_COMMITED:
+                            BalanceRequest balanceRequest = new BalanceRequest(userId, finalPriceUserHasToBid);
+                            userClient.addBalanceToUser(balanceRequest);
+                            break;
+                        case FUNDS_RESERVED:
+                            userClient.cancelBalanceReservation(finalReservationId);
+
+                            break;
+
+                        default:
+                            log.error(
+                                    "Unexpected case in the bid service catch block switch statement. Please look into this. ");
+                            break;
+
+                    }
+
+                });
+
+                sagaLogsRepository.updateStatus(sagaId, SagaState.REJECTED);
+            }
+            throw e;
+        }
     }
-}
 
     @Override
     public List<Bid> getBidsOfItems(String itemId) {
@@ -225,6 +379,53 @@ public class BidServiceImplementation implements BidService {
                 )).collect(Collectors.toList());
 
         return bidsWithItemDetails;
+
+    }
+
+    @Override
+    public GetIdempotentKeyResponse getIdempotentKey(String itemId, BigDecimal bidAmount, String userId)
+            throws Exception {
+
+        IdempotentKeys idempotentKey = IdempotentKeys.builder()
+                .bidAmount(bidAmount)
+                .bidStatus(BidStatus.PENDING)
+                .creatorId(UUID.fromString(userId))
+                .itemId(UUID.fromString(itemId))
+                .build();
+
+        idempotentKeyRepository.save(idempotentKey);
+
+        GetIdempotentKeyResponse idempotentKeyResponse = new GetIdempotentKeyResponse(
+                idempotentKey.getId().toString(),
+                UUID.fromString(itemId),
+                bidAmount,
+                Instant.now());
+
+        return idempotentKeyResponse;
+
+    }
+
+    @Override
+    public Long deleteBid(String sagaId) {
+
+        Long numberOfRecordsDeleted = bidRepository.deleteBySagaId(UUID.fromString(sagaId));
+
+        return numberOfRecordsDeleted;
+    }
+
+    @Override
+    public Map<String, BigDecimal> getItemsHighestBidGivenItemIds(List<UUID> itemIds) {
+
+        List<GetHighestBidAlongWithItemIds> itemIdsWithHighestBids = bidRepository.getItemsHighestBidGivenItemIds(itemIds);
+        HashMap<String, BigDecimal> itemIdToHighestBidMap = new HashMap<>();
+
+        itemIdsWithHighestBids.forEach(itemToHighestBidKeyValue -> {
+            itemIdToHighestBidMap.put(
+                    itemToHighestBidKeyValue.getItemId().toString(),
+                    itemToHighestBidKeyValue.getHighestBidPrice());
+        });
+
+        return itemIdToHighestBidMap;
 
     }
 

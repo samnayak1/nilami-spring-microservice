@@ -7,13 +7,16 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Repository;
 
 import com.nilami.bidservice.dto.GetBidsOfUserAlongWithHighestBidForItemResponseBody;
+import com.nilami.bidservice.dto.GetHighestBidAlongWithItemIds;
 import com.nilami.bidservice.models.Bid;
 
 import jakarta.persistence.LockModeType;
+import jakarta.transaction.Transactional;
 
 
 @Repository
@@ -31,6 +34,17 @@ public interface BidRepository extends JpaRepository<Bid,UUID>{
         UUID itemId,
         UUID creatorId
     );
+
+
+    @Query(value="""
+            SELECT 
+            b.item_id as itemId,
+            MAX(b.price) as highestBidPrice
+            FROM bids b
+            WHERE b.item_id IN :itemIds
+            GROUP BY b.item_id
+            """,nativeQuery = true)
+    List<GetHighestBidAlongWithItemIds> getItemsHighestBidGivenItemIds(@Param("itemIds") List<UUID> itemIds);
 
     @Query(value="""
             SELECT 
@@ -52,6 +66,9 @@ public interface BidRepository extends JpaRepository<Bid,UUID>{
              WHERE t.creator_id = :userId
             """, nativeQuery = true)
     List<GetBidsOfUserAlongWithHighestBidForItemResponseBody> getBidsOfUserAlongWithHighestBidForItemRepositoryQuery(UUID userId);
+
+    @Transactional
+    long deleteBySagaId(UUID fromString);
 
 
 }

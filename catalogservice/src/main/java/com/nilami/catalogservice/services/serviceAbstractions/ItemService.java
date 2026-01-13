@@ -13,7 +13,7 @@ import com.nilami.catalogservice.models.Item;
 public interface ItemService{
     ItemDTO getItem(String itemId);
 
-    Page<ItemDTO> getAllItems(Pageable pageable);
+    Page<ItemDTO> getAllItems(String categoryId,Pageable pageable);
 
     boolean checkIfExpiryDatePassed(String itemId);
 

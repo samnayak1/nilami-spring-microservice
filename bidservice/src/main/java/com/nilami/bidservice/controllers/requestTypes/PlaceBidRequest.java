@@ -22,4 +22,7 @@ public class PlaceBidRequest {
       @NotBlank(message = "The price is required.")
       private BigDecimal price;
 
+     @NotBlank(message = "The idempotent key is required.")
+      private String idempotentKey;
+
 }
