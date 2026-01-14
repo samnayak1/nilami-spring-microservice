@@ -4,10 +4,12 @@ metadata:
   name: bid-server-service
   labels:
     app: bid-server
+    metrics: dev-monitor
 spec:
   type: ClusterIP
   ports:
-    - port: 8082
+    - name: http
+      port: 8082
       targetPort: 8082
       protocol: TCP
   selector:

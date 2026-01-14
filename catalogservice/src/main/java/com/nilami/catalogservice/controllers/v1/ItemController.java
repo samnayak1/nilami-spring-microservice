@@ -21,6 +21,8 @@ import com.nilami.catalogservice.models.Item;
 import com.nilami.catalogservice.services.serviceAbstractions.FileUploadService;
 import com.nilami.catalogservice.services.serviceAbstractions.ItemService;
 
+import io.swagger.v3.oas.annotations.Parameter;
+
 @RestController
 @RequestMapping("/api/v1/items")
 @RequiredArgsConstructor
@@ -32,8 +34,8 @@ public class ItemController {
 
     @GetMapping("/test")
     public ResponseEntity<String> testController(
-            @RequestHeader("X-User-Id") String userId,
-            @RequestHeader("X-User-Roles") String roles) {
+            @Parameter(hidden = true) @RequestHeader("X-User-Id") String userId,
+           @Parameter(hidden = true) @RequestHeader("X-User-Roles") String roles) {
 
         System.out.println("roles: " + roles);
         System.out.println("userId: " + userId);
@@ -51,7 +53,7 @@ public class ItemController {
 
     @GetMapping
     public ResponseEntity<Page<ItemDTO>> getAllItems(Pageable pageable,
-         @RequestHeader("X-User-Id") String userId,
+         @Parameter(hidden = true) @RequestHeader("X-User-Id") String userId,
         @RequestParam(required = false) String categoryId) {
         try {
             System.out.println("User: " + userId + " requested to get all items");
@@ -74,7 +76,7 @@ public class ItemController {
     @PreAuthorize("hasAnyRole('ADMIN', 'SELLER')")
     public ResponseEntity<ApiResponse<String>> createItem(
             @RequestBody CreateItemRequestType request,
-            @RequestHeader("X-User-Id") String userId) {
+            @Parameter(hidden = true) @RequestHeader("X-User-Id") String userId) {
         try {
             Item response = itemService.createItem(request, userId);
             return new ResponseEntity<ApiResponse<String>>(
@@ -93,7 +95,7 @@ public class ItemController {
     @PreAuthorize("hasAnyRole('ADMIN', 'SELLER')")
     public ResponseEntity<ApiResponse<List<URL>>> addPicturesToItem(
             @RequestBody AddPicturesToItemRequest request,
-            @RequestHeader("X-User-Id") String userId) {
+            @Parameter(hidden = true) @RequestHeader("X-User-Id") String userId) {
         try {
 
             Boolean hasPicturesBeenAdded = itemService.savePictureIdsForItem(request.getItemId(), userId,

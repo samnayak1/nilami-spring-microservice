@@ -275,4 +275,22 @@ kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main
 
 
 
+Prometheus
 
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+
+# Install into a dedicated namespace
+helm install monitoring prometheus-community/kube-prometheus-stack \
+  --namespace monitoring \
+  --create-namespace
+
+kubectl port-forward svc/monitoring-grafana 3000:80 -n monitoring
+
+to get password
+kubectl get secret --namespace monitoring monitoring-grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
+
+
+kubectl get services -n monitoring
+kubectl port-forward svc/prometheus-operated 9090:9090 -n
+ monitoring

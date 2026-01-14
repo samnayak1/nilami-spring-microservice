@@ -125,6 +125,7 @@ public class BidServiceImplementation implements BidService {
             }
 
             priceUserHasToBid = balanceReservationSubtrahend;
+            log.debug("price user has to bid {}", priceUserHasToBid);
 
             // make the idempotent key checks
             Optional<IdempotentKeys> keyResponseFromDatabase = idempotentKeyRepository
@@ -169,6 +170,7 @@ public class BidServiceImplementation implements BidService {
                     .itemId(UUID.fromString(itemId))
                     .userId(UUID.fromString(userId))
                     .currentState(SagaState.STARTED)
+                    .sagaType("PLACE_BID")
                     .bidAmount(price)
                     .build();
 
@@ -194,7 +196,7 @@ public class BidServiceImplementation implements BidService {
                     .build();
 
             Bid placedBid = bidRepository.save(placedBidEntity);
-
+            log.debug("placed bid is successful for {} with price: {}", placedBid.getItemId(), placedBid.getPrice());
             sagaLogsRepository.updateStatus(sagaId, SagaState.BID_PLACED);
             log.debug("bid placed for item: " + placedBid.getItemId());
             ApiResponse<Void> commitResponse = userClient.commitBalanceReservation(reservationId);
@@ -218,11 +220,11 @@ public class BidServiceImplementation implements BidService {
             return this.convertToBidDTO(placedBid);
 
         } catch (Exception e) {
-
+            log.debug("Exception {}",e.getCause());
             if (!(e instanceof NoIdempotentKeyException || e instanceof IdempotentKeyException)) {
                 Optional<IdempotentKeys> keyResponseFromDatabase = idempotentKeyRepository
                         .findById(UUID.fromString(idempotentKey));
-
+                
                 if (keyResponseFromDatabase.isPresent()) {
                     IdempotentKeys entity = keyResponseFromDatabase.get();
                     entity.setBidStatus(BidStatus.REJECTED);
@@ -231,6 +233,7 @@ public class BidServiceImplementation implements BidService {
             }
 
             Optional<SagaLogs> sagaOptional = sagaLogsRepository.findById(sagaId);
+            log.debug("saga fetched");
             List<SagaState> eventsToRevert = new ArrayList<SagaState>();
             if (sagaOptional.isPresent()) {
                 SagaLogs saga = sagaOptional.get();
@@ -239,10 +242,12 @@ public class BidServiceImplementation implements BidService {
                     // create an array, add the cases when loop, and then finally create a function
                     // that just loops through
                     case STARTED:
+                        log.debug("SAGA ERROR CAUGHT WHEN STARTED");
                         // nothing to do because we just started
                         break;
                     case BID_PLACED:
                         // unplace the bid
+                        log.debug("SAGA ERROR CAUGHT WHEN BID PLACED");
                         eventsToRevert.add(SagaState.BID_PLACED);
 
                         // unreserve the funds
@@ -250,6 +255,7 @@ public class BidServiceImplementation implements BidService {
                         break;
 
                     case FUNDS_COMMITED:
+                        log.debug("SAGA ERROR CAUGHT WHEN FUNDS COMMITED");
                         // uncommit the funds
                         eventsToRevert.add(SagaState.FUNDS_COMMITED);
                         // unplace the bid
@@ -259,6 +265,7 @@ public class BidServiceImplementation implements BidService {
 
                         break;
                     case FUNDS_RESERVED:
+                        log.debug("SAGA ERROR CAUGHT WHEN FUNDS RESERVED");
 
                         // unreserve the fund
                         eventsToRevert.add(SagaState.FUNDS_RESERVED);
@@ -276,13 +283,16 @@ public class BidServiceImplementation implements BidService {
                 eventsToRevert.forEach(event -> {
                     switch (event) {
                         case BID_PLACED:
+                            log.debug("deleting the bid placed by saga id: {}",sagaId);
                             this.deleteBid(sagaId.toString());
                             break;
                         case FUNDS_COMMITED:
+                            log.debug("Compensating the user: {}",userId);
                             BalanceRequest balanceRequest = new BalanceRequest(userId, finalPriceUserHasToBid);
                             userClient.addBalanceToUser(balanceRequest);
                             break;
                         case FUNDS_RESERVED:
+                            log.debug("Cancelling the reservation: {}",finalReservationId);
                             userClient.cancelBalanceReservation(finalReservationId);
 
                             break;
@@ -416,7 +426,8 @@ public class BidServiceImplementation implements BidService {
     @Override
     public Map<String, BigDecimal> getItemsHighestBidGivenItemIds(List<UUID> itemIds) {
 
-        List<GetHighestBidAlongWithItemIds> itemIdsWithHighestBids = bidRepository.getItemsHighestBidGivenItemIds(itemIds);
+        List<GetHighestBidAlongWithItemIds> itemIdsWithHighestBids = bidRepository
+                .getItemsHighestBidGivenItemIds(itemIds);
         HashMap<String, BigDecimal> itemIdToHighestBidMap = new HashMap<>();
 
         itemIdsWithHighestBids.forEach(itemToHighestBidKeyValue -> {

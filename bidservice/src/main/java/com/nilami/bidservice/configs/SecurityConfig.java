@@ -25,10 +25,11 @@ public class SecurityConfig {
                                                                 "/*/v3/api-docs/**",
                                                                 "/swagger-ui/**",
                                                                 "/*/swagger-ui/**",
+                                                                "/actuator/prometheus", "/actuator/health/**", "/actuator/info",
                                                                 "/swagger-ui.html")
                                                 .permitAll()
 
-                                                .requestMatchers("/actuator/**").permitAll()
+                                         
 
                                                 .anyRequest().authenticated())
                                 .addFilterBefore(headerAuthFilter, UsernamePasswordAuthenticationFilter.class);

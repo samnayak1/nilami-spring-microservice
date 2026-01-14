@@ -28,6 +28,7 @@ import com.nilami.bidservice.models.Bid;
 
 import com.nilami.bidservice.services.BidService;
 
+import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -66,8 +67,8 @@ public class BidController {
     @PostMapping("/create")
     public ResponseEntity<ApiResponse<BidDTO>> placeBid(
             @RequestBody PlaceBidRequest request,
-            @RequestHeader("X-User-Id") String userId,
-            @RequestHeader("X-User-Roles") String roles) {
+            @Parameter(hidden = true)  @RequestHeader("X-User-Id") String userId,
+            @Parameter(hidden = true) @RequestHeader("X-User-Roles") String roles) {
         try {
 
             BidDTO placedBid = bidService.placeBid(request.getItemId(), request.getPrice(), userId,
@@ -84,7 +85,7 @@ public class BidController {
 
     @GetMapping("/all/user")
     public ResponseEntity<ApiResponse<List<GetBidsOfUserWithItemDetails>>> getAllBidsOfUser(
-            @RequestHeader("X-User-Id") String userId) {
+            @Parameter(hidden = true) @RequestHeader("X-User-Id") String userId) {
 
         try {
 
@@ -101,7 +102,7 @@ public class BidController {
     @PostMapping("/idempotent")
     public ResponseEntity<ApiResponse<GetIdempotentKeyResponse>> getIdempotentKey(
             @RequestBody GetIdempotentKeyRequest request,
-            @RequestHeader("X-User-Id") String userId) {
+            @Parameter(hidden = true) @RequestHeader("X-User-Id") String userId) {
 
         try {
 

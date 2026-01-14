@@ -4,6 +4,7 @@ metadata:
   name: websocket-service
   labels:
     app: websocket-service
+    metrics: dev-monitor
 spec:
   type: ClusterIP
   ports:

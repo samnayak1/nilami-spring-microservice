@@ -31,13 +31,14 @@ public class SecurityConfig {
                                 "/api/v1/auth/test",
                                 "/api/v1/auth/refresh",
                                 "/api/v1/auth/validate-token",
+                                "/actuator/prometheus", "/actuator/health/**", "/actuator/info",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/*/v3/api-docs/**",
                                 "/auth/v3/api-docs/**", 
                                 "/catalog/v3/api-docs/**", 
-                                "/bid/v3/api-docs/**",
-                                "/actuator/**")
+                                "/bid/v3/api-docs/**"
+                            )
                         .permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class);

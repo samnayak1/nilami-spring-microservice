@@ -4,11 +4,13 @@ metadata:
   name: registry-service 
   labels:
     app: registry-service
+    metrics: dev-monitor
 spec:
   type: ClusterIP 
   selector:
     app: registry-service
   ports:
-    - protocol: TCP
+    - name: http
+      protocol: TCP
       port: 8761      
       targetPort: 8761 

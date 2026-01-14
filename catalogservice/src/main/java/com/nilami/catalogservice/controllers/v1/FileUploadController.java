@@ -20,6 +20,7 @@ import com.nilami.catalogservice.dto.ItemDTO;
 import com.nilami.catalogservice.services.serviceAbstractions.FileUploadService;
 import com.nilami.catalogservice.services.serviceAbstractions.ItemService;
 
+import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/v1/items/file")
@@ -35,8 +36,8 @@ public class FileUploadController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> generatePresignedUrlForItem(
             @RequestBody GetPresignedUrlRequest requestBody,
-            @RequestHeader("X-User-Id") String userId,
-            @RequestHeader("X-User-Roles") String roles ) {
+            @Parameter(hidden = true) @RequestHeader("X-User-Id") String userId,
+           @Parameter(hidden = true) @RequestHeader("X-User-Roles") String roles ) {
         try {
             System.out.println("request body " + requestBody.toString());
             ItemDTO item=itemService.getItem(requestBody.getObjectId());
