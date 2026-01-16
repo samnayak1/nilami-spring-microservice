@@ -114,7 +114,7 @@ class BidServiceTest {
 
         @Test
 
-        void testPlaceBid_Success() throws Exception {
+        void testPlaceBid_Success() {
 
                 BigDecimal bidAmount = BigDecimal.valueOf(12);
                 BigDecimal userBalance = BigDecimal.valueOf(30);

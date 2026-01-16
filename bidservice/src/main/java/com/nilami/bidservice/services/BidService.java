@@ -14,10 +14,10 @@ import com.nilami.bidservice.models.Bid;
 
 public interface BidService {
       public Optional<BidDTO> getLastBid(String itemId);
-      public BidDTO placeBid(String itemId, BigDecimal price, String userId, String idempotentKey) throws Exception;
+      public BidDTO placeBid(String itemId, BigDecimal price, String userId, String idempotentKey);
       public Long deleteBid(String sagaId);
       public List<Bid> getBidsOfItems(String itemId);
       public List<GetBidsOfUserWithItemDetails>  getBidsOfUserAlongWithHighestBidForItem(String userId);
-      public GetIdempotentKeyResponse getIdempotentKey(String itemId,BigDecimal bidAmount,String userId) throws Exception;
+      public GetIdempotentKeyResponse getIdempotentKey(String itemId,BigDecimal bidAmount,String userId);
       Map<String, BigDecimal> getItemsHighestBidGivenItemIds(List<UUID> itemIds);
 }

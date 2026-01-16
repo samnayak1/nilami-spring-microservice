@@ -76,7 +76,7 @@ public class ItemServiceImpl implements ItemService {
             .collect(Collectors.toList());
 
         Map<String, BigDecimal> highestBids = getHighestBids(itemIds);
-
+        System.out.print("The highest bids"+ highestBids);
         dtoList.forEach(item -> {
          BigDecimal highestBid = highestBids.getOrDefault(item.getId(), BigDecimal.ZERO);
          item.setHighestBidPrice(highestBid);

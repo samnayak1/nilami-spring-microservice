@@ -294,3 +294,13 @@ kubectl get secret --namespace monitoring monitoring-grafana -o jsonpath="{.data
 kubectl get services -n monitoring
 kubectl port-forward svc/prometheus-operated 9090:9090 -n
  monitoring
+
+helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
+helm repo update
+
+helm upgrade monitoring prometheus-community/kube-prometheus-stack \
+  -n monitoring -f monitor-values.yaml
+
+
+helm upgrade --install otel-collector open-telemetry/opentelemetry-collector \
+  -n monitoring -f otel-values.yaml

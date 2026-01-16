@@ -79,7 +79,7 @@ public class BidServiceImplementation implements BidService {
     }
 
     @Override
-    public BidDTO placeBid(String itemId, BigDecimal price, String userId, String idempotentKey) throws Exception {
+    public BidDTO placeBid(String itemId, BigDecimal price, String userId, String idempotentKey) {
         String reservationId = null;
         UUID sagaId = UUID.randomUUID();
         BigDecimal priceUserHasToBid = BigDecimal.valueOf(0.0);
@@ -394,7 +394,7 @@ public class BidServiceImplementation implements BidService {
 
     @Override
     public GetIdempotentKeyResponse getIdempotentKey(String itemId, BigDecimal bidAmount, String userId)
-            throws Exception {
+             {
 
         IdempotentKeys idempotentKey = IdempotentKeys.builder()
                 .bidAmount(bidAmount)
@@ -428,14 +428,15 @@ public class BidServiceImplementation implements BidService {
 
         List<GetHighestBidAlongWithItemIds> itemIdsWithHighestBids = bidRepository
                 .getItemsHighestBidGivenItemIds(itemIds);
+        System.out.print("itemIdsWithHighestBids:"+itemIdsWithHighestBids);
         HashMap<String, BigDecimal> itemIdToHighestBidMap = new HashMap<>();
-
+        
         itemIdsWithHighestBids.forEach(itemToHighestBidKeyValue -> {
             itemIdToHighestBidMap.put(
                     itemToHighestBidKeyValue.getItemId().toString(),
                     itemToHighestBidKeyValue.getHighestBidPrice());
         });
-
+        System.out.print("itemIdToHighestBid:"+itemIdToHighestBidMap);
         return itemIdToHighestBidMap;
 
     }

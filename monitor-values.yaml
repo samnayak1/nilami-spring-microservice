@@ -1,0 +1,27 @@
+grafana:
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: Loki
+          type: loki
+          url: http://loki.monitoring.svc.cluster.local:3100
+          access: proxy
+          isDefault: false
+
+        - name: Tempo
+          type: tempo
+          url: http://tempo.monitoring.svc.cluster.local:3100
+          access: proxy
+          isDefault: false
+          jsonData:
+            tracesToLogs:
+              datasourceUid: Loki
+              tags: ["job", "instance", "pod", "namespace"]
+              mappedTags:
+                - key: service.name
+                  value: app
+              spanStartTimeShift: "-5m"
+              spanEndTimeShift: "5m"
+              filterByTraceID: true
+              filterBySpanID: false

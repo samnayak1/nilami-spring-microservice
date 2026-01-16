@@ -1,6 +1,7 @@
 package com.nilami.catalogservice.controllers.v1;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.net.URL;
 import java.util.List;
@@ -26,6 +27,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 @RestController
 @RequestMapping("/api/v1/items")
 @RequiredArgsConstructor
+@Slf4j
 public class ItemController {
 
     private final ItemService itemService;
@@ -56,7 +58,7 @@ public class ItemController {
          @Parameter(hidden = true) @RequestHeader("X-User-Id") String userId,
         @RequestParam(required = false) String categoryId) {
         try {
-            System.out.println("User: " + userId + " requested to get all items");
+            log.debug("User: " + userId + " requested to get all items");
             return ResponseEntity.ok(itemService.getAllItems(categoryId, pageable));
         } catch (Exception e) {
             throw new RuntimeException("Failed to retrieve items: " + e.getMessage(), e);
