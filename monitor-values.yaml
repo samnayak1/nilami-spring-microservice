@@ -3,11 +3,26 @@ grafana:
     datasources.yaml:
       apiVersion: 1
       datasources:
+        - name: Prometheus
+          type: prometheus
+          url: http://monitoring-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090
+          access: proxy
+          isDefault: true
+          version: 1
+
         - name: Loki
           type: loki
           url: http://loki.monitoring.svc.cluster.local:3100
           access: proxy
           isDefault: false
+          jsonData:
+            derivedFields:
+              - datasourceUid: tempo
+                matcherRegex: "traceId[=:]\\s*(\\w+)"
+                name: TraceID
+                url: $${__value.raw}
+            maxLines: 1000
+          version: 1
 
         - name: Tempo
           type: tempo
@@ -25,3 +40,10 @@ grafana:
               spanEndTimeShift: "5m"
               filterByTraceID: true
               filterBySpanID: false
+            tracesToMetrics:
+              datasourceUid: Prometheus
+              tags:
+                - key: service.name
+                  value: service
+            serviceMap:
+              datasourceUid: Prometheus

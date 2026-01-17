@@ -275,12 +275,29 @@ kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main
 
 
 
-Prometheus
+
+## Monitoring
+
+Prometheus - Collects and stores metrics (CPU usage, request rates, error counts, etc.)
+Loki - Collects and stores logs (application logs, error messages, debug info)
+Tempo - Collects and stores traces (tracking requests as they flow through your services)
+OpenTelemetry - Instruments your applications to send metrics, logs, and traces to the above tools
+Grafana - Visualizes everything in dashboards and handles alerting
+
+app -> opentelemettry -> tempo
+
+app -> Prometheus -> Grafana
+
+app -> Loki -> Grafana
+
+Receivers collect telemetry from one or more sources. They can be pull or push based, and may support one or more data sources.
+
+Exporters send data to one or more backends or destinations. Exporters can be pull or push based, and may support one or more data sources. We use Loki and Prometheus
 
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
 
-# Install into a dedicated namespace
+
 helm install monitoring prometheus-community/kube-prometheus-stack \
   --namespace monitoring \
   --create-namespace
@@ -304,3 +321,6 @@ helm upgrade monitoring prometheus-community/kube-prometheus-stack \
 
 helm upgrade --install otel-collector open-telemetry/opentelemetry-collector \
   -n monitoring -f otel-values.yaml
+
+
+kubectl logs -n monitoring -l app.kubernetes.io/name=opentelemetry-collector -f

@@ -87,7 +87,7 @@ public class AuthController {
             HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(form, headers);
 
             ResponseEntity<Map> response = restTemplate.postForEntity(tokenUrl, request, Map.class);
-            System.out.println("response from keycloak login" + response.getBody());
+    
             return ResponseEntity.ok(response.getBody());
 
         } catch (HttpClientErrorException e) {

@@ -69,17 +69,14 @@ public class BidController {
             @RequestBody PlaceBidRequest request,
             @Parameter(hidden = true)  @RequestHeader("X-User-Id") String userId,
             @Parameter(hidden = true) @RequestHeader("X-User-Roles") String roles) {
-        try {
+     
 
             BidDTO placedBid = bidService.placeBid(request.getItemId(), request.getPrice(), userId,
                     request.getIdempotentKey());
 
             return ResponseEntity.ok(new ApiResponse<>(true, "Bids placed successfully", placedBid));
 
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse<>(false, "Error placing bid: " + e.getMessage(), null));
-        }
+     
 
     }
 
