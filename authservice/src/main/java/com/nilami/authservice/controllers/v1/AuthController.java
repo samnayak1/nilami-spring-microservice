@@ -109,6 +109,9 @@ public class AuthController {
                 request.getName(), request.getAge(), request.getGender());
         String keycloakUserId = null;
         try {
+            //check if duplicate emails exists
+
+
             // Create user in Keycloak
             log.info("Attempting to create user in Keycloak for email: {}", request.getEmail());
             keycloakUserId = userAuthSignupService.createUser(request);

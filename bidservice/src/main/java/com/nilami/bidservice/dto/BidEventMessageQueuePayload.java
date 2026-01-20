@@ -1,25 +1,26 @@
 package com.nilami.bidservice.dto;
 
 import java.math.BigDecimal;
-
+import java.time.Instant;
 import java.util.UUID;
 
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 
-@AllArgsConstructor
-@Setter
 @Getter
+@NoArgsConstructor
+@AllArgsConstructor
 @EqualsAndHashCode
+@Setter
 public class BidEventMessageQueuePayload {
-    
-    UUID itemId;
-    UUID bidId;
-    BigDecimal amount;
-    UUID userId;
-    String timestamp;
 
+    private UUID itemId;
+    private UUID bidId;
+    private BigDecimal amount;
+    private UUID userId;
+    private Instant timestamp;
 }

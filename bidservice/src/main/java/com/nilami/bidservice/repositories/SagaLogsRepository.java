@@ -13,7 +13,7 @@ import jakarta.transaction.Transactional;
 
 public interface SagaLogsRepository extends JpaRepository<SagaLogs,UUID>{
     
-    @Modifying
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Transactional
     @Query("UPDATE SagaLogs s SET s.currentState = :newState, s.updatedAt = CURRENT_TIMESTAMP WHERE s.sagaId = :id")
     void updateStatus(UUID id, SagaState newState);

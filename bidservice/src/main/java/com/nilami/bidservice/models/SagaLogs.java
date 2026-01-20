@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -30,6 +31,7 @@ import lombok.Setter;
 @Table(name = "saga_logs")
 public class SagaLogs {
     @Id
+
     @Column(name = "saga_id", updatable = false, nullable = false)
     private UUID sagaId;
 

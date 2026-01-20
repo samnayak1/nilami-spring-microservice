@@ -3,12 +3,12 @@ grafana:
     datasources.yaml:
       apiVersion: 1
       datasources:
-        - name: Prometheus
-          type: prometheus
-          url: http://monitoring-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090
-          access: proxy
-          isDefault: true
-          version: 1
+        # - name: Prometheus
+        #   type: prometheus
+        #   url: http://monitoring-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090
+        #   access: proxy
+        #   isDefault: true
+        #   version: 1
 
         - name: Loki
           type: loki
