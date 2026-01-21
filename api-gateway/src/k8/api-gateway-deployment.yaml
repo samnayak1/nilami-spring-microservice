@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
       - name: api-gateway
-        image: samnayak1/api-gateway:1.0.18
+        image: samnayak1/api-gateway:1.0.20
         imagePullPolicy: IfNotPresent
         envFrom:
           - configMapRef:

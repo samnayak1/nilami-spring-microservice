@@ -136,6 +136,7 @@ helm repo add external-secrets https://charts.external-secrets.io
 helm install external-secrets external-secrets/external-secrets \
   --namespace external-secrets --create-namespace
 
+helm list -n monitoring
 # Vault Initialization & Unsealing
 kubectl exec -n vault -it vault-0 -- sh
 vault operator init
@@ -294,33 +295,83 @@ Receivers collect telemetry from one or more sources. They can be pull or push b
 
 Exporters send data to one or more backends or destinations. Exporters can be pull or push based, and may support one or more data sources. We use Loki and Prometheus
 
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
+p50 (Median) - 50% of requests are faster than this. A “typical” user experience.
+p95 - 95% of requests are faster. The other 5%? Could be slow, problematic, or timing out.
+p99 - 99% of requests are faster. That remaining 1%? Usually what people complain about.
+
+helm install monitoring grafana/loki-stack \
+  --set prometheus.enabled=true \
+  --set loki.enabled=true \
+  --set grafana.enabled=true
+
+  helm upgrade monitoring grafana/loki-stack \
+  --set loki.image.tag=2.9.4 \
+  --reuse-values
+
+  kubectl rollout restart deployment -n monitoring
+
+kubectl port-forward svc/monitoring-grafana 3000:80
+
+kubectl get secret monitoring-grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
+
+Go to explore
+
+Prometheus
+
+# Cluster CPU usage
+sum(rate(container_cpu_usage_seconds_total[5m])) * 100
+
+# Memory usage
+sum(container_memory_working_set_bytes) / 1024 / 1024 / 1024
+
+# Pod count
+count(kube_pod_info)
+
+# Node status
+kube_node_status_condition{condition="Ready", status="true"}
+
+Loki
+
+# All logs
+{job="varlogs"}
+
+# Logs from specific pod (find pod names first)
+kubectl get pods
+# Then in Grafana:
+{pod="your-pod-name-here"}
+
+# Logs with errors
+{job="varlogs"} |= "error"
+
+# Logs from specific namespace
+{namespace="default"}
 
 
-helm install monitoring prometheus-community/kube-prometheus-stack \
-  --namespace monitoring \
-  --create-namespace
+Click "+" → "Import" → Enter these IDs:
 
-kubectl port-forward svc/monitoring-grafana 3000:80 -n monitoring
+Essential Dashboards:
 
-to get password
-kubectl get secret --namespace monitoring monitoring-grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
+3119 - Kubernetes cluster monitoring
 
+6417 - Pod monitoring
 
-kubectl get services -n monitoring
-kubectl port-forward svc/prometheus-operated 9090:9090 -n
- monitoring
+315 - Node monitoring
 
-helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
-helm repo update
+12006 - Loki logs dashboard
 
-helm upgrade monitoring prometheus-community/kube-prometheus-stack \
-  -n monitoring -f monitor-values.yaml
+10856 - Prometheus stats
 
+13186 - Loki dashboard
 
-helm upgrade --install otel-collector open-telemetry/opentelemetry-collector \
-  -n monitoring -f otel-values.yaml
+ID 15141: Kubernetes Logs (Loki) – The gold standard for viewing logs by namespace, pod, and container.
+
+ID 13186: Loki Dashboard – Includes a quick search bar and a log timeline.
+
+ID 14055: Loki Stack Monitoring – Specifically designed for the loki-stack chart to monitor Loki's health itself.
 
 
-kubectl logs -n monitoring -l app.kubernetes.io/name=opentelemetry-collector -f
+
+ kubectl get pods -l app=loki
+
+ kubectl get pods -l app.kubernetes.io/name=grafana
+

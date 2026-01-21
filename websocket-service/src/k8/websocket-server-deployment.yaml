@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: websocket-service
-          image: samnayak1/websocket-server:1.0.0
+          image: samnayak1/websocket-server:1.0.1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3001

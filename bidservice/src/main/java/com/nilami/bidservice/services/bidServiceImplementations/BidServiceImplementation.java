@@ -13,8 +13,6 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nilami.bidservice.controllers.requestTypes.BalanceRequest;
 import com.nilami.bidservice.controllers.requestTypes.BalanceReservationRequest;
 import com.nilami.bidservice.dto.ApiResponse;
@@ -26,8 +24,7 @@ import com.nilami.bidservice.dto.GetBidsOfUserWithItemDetails;
 import com.nilami.bidservice.dto.GetHighestBidAlongWithItemIds;
 import com.nilami.bidservice.dto.GetIdempotentKeyResponse;
 import com.nilami.bidservice.dto.ItemDTO;
-import com.nilami.bidservice.dto.OutboxEventType;
-import com.nilami.bidservice.dto.OutboxStatus;
+
 import com.nilami.bidservice.dto.SimplifiedItemDTO;
 import com.nilami.bidservice.dto.UserDTO;
 import com.nilami.bidservice.exceptions.BidLessThanItemException;
@@ -41,14 +38,14 @@ import com.nilami.bidservice.exceptions.NoIdempotentKeyException;
 import com.nilami.bidservice.models.Bid;
 import com.nilami.bidservice.models.BidStatus;
 import com.nilami.bidservice.models.IdempotentKeys;
-import com.nilami.bidservice.models.OutboxEvent;
+
 import com.nilami.bidservice.models.SagaLogs;
 import com.nilami.bidservice.models.SagaState;
 import com.nilami.bidservice.repositories.BidRepository;
 import com.nilami.bidservice.repositories.IdempotentKeyRepository;
-import com.nilami.bidservice.repositories.OutboxRepository;
-import com.nilami.bidservice.repositories.SagaLogsRepository;
 
+import com.nilami.bidservice.repositories.SagaLogsRepository;
+import com.nilami.bidservice.services.BidEventPublisher;
 import com.nilami.bidservice.services.BidService;
 import com.nilami.bidservice.services.externalClients.ItemClient;
 import com.nilami.bidservice.services.externalClients.UserClient;
@@ -68,13 +65,15 @@ public class BidServiceImplementation implements BidService {
 
     private final SagaLogsRepository sagaLogsRepository;
 
-    private final OutboxRepository outboxRepository;
+   // private final OutboxRepository outboxRepository;
 
     private final UserClient userClient;
 
     private final ItemClient itemClient;
 
-    private final ObjectMapper objectMapper;
+    private final BidEventPublisher bidEventPublisher;
+
+ //   private final ObjectMapper objectMapper;
 
     
 
@@ -135,9 +134,9 @@ public class BidServiceImplementation implements BidService {
             }
 
             // Actual bid process happens from here onwards
-            // Add Saga logs
 
-            // pending to creating i.e the rollback starts now if fails
+
+            // bid status logs is set from pending to creating i.e the rollback starts now if fails
 
             entity.setBidStatus(BidStatus.CREATING);
             idempotentKeyRepository.save(entity);
@@ -184,6 +183,7 @@ public class BidServiceImplementation implements BidService {
             sagaLogsRepository.updateStatus(sagaId, SagaState.FUNDS_COMMITED);
 
             BidEventMessageQueuePayload messageQueuePayload = new BidEventMessageQueuePayload(
+                    UUID.randomUUID(), //eventId which is unique for idempotent requests
                     UUID.fromString(itemId),
                     placedBid.getId(),
                     price,
@@ -191,23 +191,25 @@ public class BidServiceImplementation implements BidService {
                     Instant.now()
                 );
 
-            String payload = objectMapper.writeValueAsString(messageQueuePayload);
+            // String payload = objectMapper.writeValueAsString(messageQueuePayload);
 
-            OutboxEvent outboxEvent = OutboxEvent.builder()
-                    .eventType(OutboxEventType.BidPlaced)
-                    .payload(payload)
-                    .aggregateId(UUID.fromString(itemId))
-                    .aggregateType("BID")
-                    .status(OutboxStatus.NEW)
-                    .build();
-            outboxRepository.save(outboxEvent);
+            // OutboxEvent outboxEvent = OutboxEvent.builder()
+            //         .eventType(OutboxEventType.BidPlaced)
+            //         .payload(payload)
+            //         .aggregateId(UUID.fromString(itemId))
+            //         .aggregateType("BID")
+            //         .status(OutboxStatus.NEW)
+            //         .build();
+            // outboxRepository.save(outboxEvent);
 
-            // // fire and forget. This sends an event to the websocket service
-            // try {
-            //     bidEventPublisher.sendBidEventToQueue(messageQueuePayload);
-            // } catch (Exception ex) {
-            //     log.warn("Failed to send bid event to queue. Ignoring.", ex);
-            // }
+
+
+            // fire and forget. This sends an event to the websocket service for the service to relay the latest bid for every other user
+            try {
+                bidEventPublisher.sendBidEventToQueue(messageQueuePayload);
+            } catch (Exception ex) {
+                log.warn("Failed to send bid event to queue. Ignoring.", ex);
+            }
 
             entity.setBidStatus(BidStatus.COMPLETED);
             idempotentKeyRepository.save(entity);
@@ -215,9 +217,12 @@ public class BidServiceImplementation implements BidService {
             sagaLogsRepository.updateStatus(sagaId, SagaState.COMPLETED);
 
             return this.convertToBidDTO(placedBid);
-        } catch (JsonProcessingException e) {
-            throw new IllegalStateException("Failed to serialize outbox payload", e);
-        } catch (OptimisticLockException e) {
+        }
+        // } catch (JsonProcessingException e) {
+        //     throw new IllegalStateException("Failed to serialize outbox payload", e);
+        // }
+        
+        catch (OptimisticLockException e) {
 
             log.warn("Another request for idempotent key {}", idempotentKey);
             throw new IdempotentKeyException("This bid is already being processed by another request.");

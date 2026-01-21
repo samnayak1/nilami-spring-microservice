@@ -17,7 +17,8 @@ import lombok.Setter;
 @EqualsAndHashCode
 @Setter
 public class BidEventMessageQueuePayload {
-
+    
+    private UUID eventId;
     private UUID itemId;
     private UUID bidId;
     private BigDecimal amount;

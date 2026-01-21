@@ -30,17 +30,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
+
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
 import com.nilami.bidservice.controllers.requestTypes.BalanceReservationRequest;
 import com.nilami.bidservice.dto.ApiResponse;
 import com.nilami.bidservice.dto.BalanceReservationResponse;
 import com.nilami.bidservice.dto.BidDTO;
-
+import com.nilami.bidservice.dto.BidEventMessageQueuePayload;
 import com.nilami.bidservice.dto.ItemDTO;
 import com.nilami.bidservice.dto.Roles;
 import com.nilami.bidservice.dto.UserDTO;
@@ -51,14 +49,14 @@ import com.nilami.bidservice.exceptions.ItemExpiredException;
 import com.nilami.bidservice.models.Bid;
 import com.nilami.bidservice.models.BidStatus;
 import com.nilami.bidservice.models.IdempotentKeys;
-import com.nilami.bidservice.models.OutboxEvent;
+
 import com.nilami.bidservice.models.SagaLogs;
 import com.nilami.bidservice.models.SagaState;
 import com.nilami.bidservice.repositories.BidRepository;
 import com.nilami.bidservice.repositories.IdempotentKeyRepository;
-import com.nilami.bidservice.repositories.OutboxRepository;
-import com.nilami.bidservice.repositories.SagaLogsRepository;
 
+import com.nilami.bidservice.repositories.SagaLogsRepository;
+import com.nilami.bidservice.services.BidEventPublisher;
 import com.nilami.bidservice.services.bidServiceImplementations.BidServiceImplementation;
 import com.nilami.bidservice.services.externalClients.ItemClient;
 import com.nilami.bidservice.services.externalClients.UserClient;
@@ -81,16 +79,19 @@ class BidServiceTest {
 
 
         @Mock
-        private OutboxRepository outboxRepository;
+        private  BidEventPublisher bidEventPublisher;
+
+        // @Mock
+        // private OutboxRepository outboxRepository;
 
         @Mock
         private UserClient userClient;
 
-        @Spy
-        private ObjectMapper objectMapper =
-        JsonMapper.builder()
-                .addModule(new JavaTimeModule())
-                .build();
+        // @Spy
+        // private ObjectMapper objectMapper =
+        // JsonMapper.builder()
+        //         .addModule(new JavaTimeModule())
+        //         .build();
 
 
         @Mock
@@ -192,12 +193,12 @@ class BidServiceTest {
                 when(sagaLogsRepository.save(any(SagaLogs.class)))
                                 .thenReturn(sagaLog);
 
-                when(outboxRepository.save(any(OutboxEvent.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+                // when(outboxRepository.save(any(OutboxEvent.class)))
+                // .thenAnswer(invocation -> invocation.getArgument(0));
 
                 doNothing().when(sagaLogsRepository).updateStatus(any(UUID.class), any(SagaState.class));
 
-                // doNothing().when(bidEventPublisher).sendBidEventToQueue(any(BidEventMessageQueuePayload.class));
+                 doNothing().when(bidEventPublisher).sendBidEventToQueue(any(BidEventMessageQueuePayload.class));
 
                 BidDTO result = bidService.placeBid(itemId.toString(), bidAmount, userId.toString(),
                                 idempotentKey.toString());
@@ -211,9 +212,9 @@ class BidServiceTest {
                 verify(userClient).reserveBalance(any(BalanceReservationRequest.class));
                 verify(userClient).commitBalanceReservation(balanceResponse.getReservationId());
                 verify(sagaLogsRepository, times(4)).updateStatus(any(UUID.class), any(SagaState.class));
-                // verify(bidEventPublisher, times(1)).sendBidEventToQueue(any(BidEventMessageQueuePayload.class));
+                verify(bidEventPublisher, times(1)).sendBidEventToQueue(any(BidEventMessageQueuePayload.class));
                 verify(bidRepository).save(any(Bid.class));
-                verify(outboxRepository, times(1)).save(any(OutboxEvent.class));
+              //  verify(outboxRepository, times(1)).save(any(OutboxEvent.class));
         }
 
         @Test
@@ -224,13 +225,11 @@ class BidServiceTest {
                 BigDecimal lastBidAmount = BigDecimal.valueOf(11);
                 BigDecimal itemBasePrice = BigDecimal.valueOf(10);
 
-                // UserDTO user = createUserDTO(userId,userBalance);
+   
                 UserDTO previoudUserWhoBid = createUserDTO(previousBidUserId, userBalance);
                 ItemDTO item = createItemDTO(itemBasePrice, Date.from(Instant.now().plus(1, ChronoUnit.HOURS)));
                 Bid lastBid = createBid(lastBidAmount, previousBidUserId);
 
-                // when(userClient.getUserDetails(userId.toString()))
-                // .thenReturn(new ApiResponse<>(true, "user fetched", user));
                 when(userClient.getUserDetails(previousBidUserId.toString()))
                                 .thenReturn(new ApiResponse<>(true, "user created", previoudUserWhoBid));
                 when(itemClient.getItem(itemId.toString())).thenReturn(item);
@@ -299,19 +298,16 @@ class BidServiceTest {
 
                 ItemDTO item = createItemDTO(itemBasePrice, Date.from(Instant.now().plus(1, ChronoUnit.HOURS)));
                 Bid lastBid = createBid(lastBidAmount, previousBidUserId);
-                // UserDTO user = createUserDTO(userId,userBalance);
+   
                 UserDTO previoudUserWhoBid = createUserDTO(previousBidUserId, userBalance);
-                // when(userClient.getUserDetails(userId.toString()))
-                // .thenReturn(new ApiResponse<>(true, "user fetched", user));
+        
                 when(userClient.getUserDetails(previousBidUserId.toString()))
                                 .thenReturn(new ApiResponse<>(true, "user created", previoudUserWhoBid));
 
                 when(itemClient.getItem(itemId.toString())).thenReturn(item);
                 when(bidRepository.findTopByItemIdOrderByCreatedDesc(itemId))
                                 .thenReturn(Optional.of(lastBid));
-                // when(bidRepository.findTopByItemIdAndCreatorIdOrderByCreatedDesc(itemId,
-                // userId))
-                // .thenReturn(Optional.empty());
+          
                 when(idempotentKeyRepository.findById(idempotentKey)).thenReturn(Optional.of(
                                 IdempotentKeys.builder()
                                                 .bidAmount(bidAmount)
@@ -348,14 +344,7 @@ class BidServiceTest {
                 when(bidRepository.findTopByItemIdOrderByCreatedDesc(itemId))
                                 .thenReturn(Optional.empty());
 
-                // UserDTO user = createUserDTO(userId,BigDecimal.valueOf(100.00));
-                // UserDTO previoudUserWhoBid=createUserDTO(previousBidUserId,
-                // BigDecimal.valueOf(100.00));
-
-                // when(userClient.getUserDetails(userId.toString()))
-                // .thenReturn(new ApiResponse<>(true, "user fetched", user));
-                // when(userClient.getUserDetails(previousBidUserId.toString()))
-                // .thenReturn(new ApiResponse<>(true, "user created", previoudUserWhoBid));
+            
 
                 BidLessThanItemException exception = assertThrows(BidLessThanItemException.class,
                                 () -> bidService.placeBid(itemId.toString(), bidAmount, userId.toString(),
@@ -374,14 +363,7 @@ class BidServiceTest {
                 // Item expired 1 hour ago
                 ItemDTO item = createItemDTO(itemBasePrice, Date.from(Instant.now().minus(1, ChronoUnit.HOURS)));
 
-                // UserDTO user = createUserDTO(userId,BigDecimal.valueOf(100.00));
-                // UserDTO previoudUserWhoBid=createUserDTO(previousBidUserId,
-                // BigDecimal.valueOf(100.00));
 
-                // when(userClient.getUserDetails(userId.toString()))
-                // .thenReturn(new ApiResponse<>(true, "user fetched", user));
-                // when(userClient.getUserDetails(previousBidUserId.toString()))
-                // .thenReturn(new ApiResponse<>(true, "user created", previoudUserWhoBid));
 
                 when(idempotentKeyRepository.findById(idempotentKey)).thenReturn(Optional.of(
                                 IdempotentKeys.builder()
@@ -408,7 +390,7 @@ class BidServiceTest {
         void testPlaceBid_ItemNotFound() {
 
                 BigDecimal bidAmount = BigDecimal.valueOf(15);
-                // UserDTO user = createUserDTO(userId,userBalance);
+      
                 UserDTO previoudUserWhoBid = createUserDTO(previousBidUserId, BigDecimal.valueOf(50.00));
 
                 FeignException feignException = new FeignException.BadRequest(

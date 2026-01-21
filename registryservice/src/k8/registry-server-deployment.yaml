@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
       - name: registry-service
-        image: samnayak1/registryservice:1.0.2
+        image: samnayak1/registryservice:1.0.3
         imagePullPolicy: IfNotPresent
         resources:
           limits:
