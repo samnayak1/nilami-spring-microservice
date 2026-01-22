@@ -13,8 +13,11 @@ import com.nilami.catalogservice.models.Item;
 
 public interface ItemRepository extends JpaRepository<Item, UUID> {
 
-    Page<Item> findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(String keyword, String keyword2,
-            Pageable pageable);
+Page<Item> findByTitleStartingWithIgnoreCaseOrDescriptionStartingWithIgnoreCase(
+        String titlePrefix,
+        String descriptionPrefix,
+        Pageable pageable
+);
 
 
      //Unset splits it up like VALUES (1), (2), (3), (4)). This is called a virtual table

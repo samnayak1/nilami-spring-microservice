@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: catalog-server-container
-        image: samnayak1/catalogbackend:1.0.9
+        image: samnayak1/catalogbackend:1.0.10
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8085

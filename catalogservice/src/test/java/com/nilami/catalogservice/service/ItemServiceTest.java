@@ -191,7 +191,7 @@ public class ItemServiceTest {
     void testSearchItem() throws Exception {
         Pageable pageable = PageRequest.of(0, 10);
 
-        when(itemRepository.findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
+        when(itemRepository.findByTitleStartingWithIgnoreCaseOrDescriptionStartingWithIgnoreCase(
                 "lap", "lap", pageable))
                 .thenReturn(new PageImpl<>(List.of(item), pageable, 1));
 
@@ -206,7 +206,7 @@ public class ItemServiceTest {
         assertEquals("Laptop", results.toList().get(0).getTitle());
 
         verify(itemRepository, times(1))
-                .findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase("lap", "lap", pageable);
+                .findByTitleStartingWithIgnoreCaseOrDescriptionStartingWithIgnoreCase("lap", "lap", pageable);
     }
 
 }

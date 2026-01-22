@@ -137,8 +137,9 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public Page<ItemDTO> searchItem(String keyword, Pageable pageable) {
+        String keywordSanitized = escapeLike(keyword);
         Page<Item> itemsPage = itemRepository
-                .findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(keyword, keyword, pageable);
+                .findByTitleStartingWithIgnoreCaseOrDescriptionStartingWithIgnoreCase(keywordSanitized, keywordSanitized, pageable);
 
         List<ItemDTO> dtoList = itemsPage.getContent()
                 .stream()
@@ -147,6 +148,15 @@ public class ItemServiceImpl implements ItemService {
 
         return new PageImpl<>(dtoList, pageable, itemsPage.getTotalElements());
     }
+
+    //to prevent sql injection. If the user input is %a%, it will search the whole table and 
+    //it's like a DDos attack where the full table scan slows down the query significantly. 
+    private static String escapeLike(String input) {
+    return input
+            .replace("\\", "\\\\")
+            .replace("%", "\\%")
+            .replace("_", "\\_");
+     }
 
     @Override
     public List<SimplifiedItemDTO> getItemDetailsGivenIds(List<String> itemIds) {
