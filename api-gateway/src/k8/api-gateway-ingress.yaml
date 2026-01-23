@@ -3,6 +3,8 @@ kind: Ingress
 metadata:
   name: app-ingress
   namespace: default
+  annotations:
+    traefik.ingress.kubernetes.io/custom-request-headers: "X-User-Id:||X-User-Roles:"
 spec:
   ingressClassName: traefik
   rules:
