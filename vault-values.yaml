@@ -2,7 +2,7 @@ server:
   dataStorage:
     enabled: true
     size: 10Gi
-    storageClass: standard
+    storageClass: local-path
 
   standalone:
     enabled: true

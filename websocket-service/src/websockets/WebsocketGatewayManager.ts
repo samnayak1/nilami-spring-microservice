@@ -14,8 +14,9 @@ export class SocketManager<T> implements ISocketManager<T> {
     init(server: http.Server): void {
 
         this.io = new Server(server, {
+           
             cors: { origin: "*" },
-           // path:"/socket/bid"
+            path:"/ws"
         });
 
     }

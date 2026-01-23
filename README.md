@@ -9,7 +9,7 @@ The architecture is built using modern cloud-native technologies:
 - **Backend:** Spring Boot, Spring Data JPA
 - **Database Migration:** Flyway
 - **Containerization:** Docker
-- **Orchestration:** Kubernetes (Minikube)
+- **Orchestration:** Kubernetes 
 - **Security & Identity:** Keycloak
 - **Secret Management:** Hashicorp Vault
 
@@ -20,7 +20,7 @@ The architecture is built using modern cloud-native technologies:
 The following tools must be installed to run the project:
 
 1. Docker
-2. Minikube
+2. Minikube/Kind/k3s
 3. Helm
 4. Kubeseal
 
@@ -68,7 +68,24 @@ kind create cluster
 
 kubectl config current-context
 ```
+With K3s
+```
+curl -sfL https://get.k3s.io | sh -s - \
+  --write-kubeconfig-mode=644
 
+sudo kubectl get nodes
+mkdir -p ~/.kube
+sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
+sudo chown $USER:$USER ~/.kube/config
+export KUBECONFIG=~/.kube/config
+
+sudo systemctl stop k3s
+
+sudo systemctl status k3s
+
+sudo systemctl start k3s
+
+```
 ---
 
 ## Image Management
@@ -141,18 +158,20 @@ helm list -n monitoring
 kubectl exec -n vault -it vault-0 -- sh
 vault operator init
 kubectl exec -n vault vault-0 -- vault status
-kubectl exec -n vault vault-0 -- vault operator unseal <key>
+kubectl exec -n vault vault-0 -- vault operator unseal <key1>
+... until key n
+kubectl exec -n vault vault-0 -- vault operator unseal <key2>
 
 # Configure Policy and Tokens
 kubectl exec -n vault -it vault-0 -- sh
 vault login <ROOT_TOKEN>
 kubectl cp vault-read.hcl vault/vault-0:/tmp/vault-read.hcl
 kubectl exec -it -n vault vault-0 -- vault policy write vault-read /tmp/vault-read.hcl
-kubectl create secret generic vault-token -n external-secrets --from-literal=token=<token>
+kubectl create secret generic vault-token -n external-secrets --from-literal=token=<root token>
 
 
 #to verify
- kubectl get externalsecret 
+
  kubectl describe externalsecret <secret-name> -n <namspace>
  kubectl describe ClusterSecretStore vault-backend
 
@@ -165,34 +184,12 @@ kubectl create secret generic vault-token -n external-secrets --from-literal=tok
  
 ```
 
-### Bitnami Sealed Secrets (Deprecated)
 
-> **Note:** This method is deprecated in favor of Hashicorp Vault.
-
-```bash
-kubeseal --format=yaml < <unsealed-file>.yaml \
-  --controller-namespace kube-system \
-  --controller-name sealed-secrets > <sealed-file>.yaml
-kubectl apply -f <sealed-file>.yaml
-```
 
 ---
 
-## Infrastructure Services
 
-### Messaging (Kafka)
 
-```bash
-# Install
-helm install kafka bitnami/kafka -f kafka-values.yaml \
-  --namespace kafka --create-namespace
-
-# Upgrade
-helm upgrade kafka bitnami/kafka -f kafka-values.yaml --namespace kafka
-
-# Check Environment
-kubectl exec <pod-name> -- printenv | grep KAFKA_BROKER
-```
 
 ### Database (CloudNativePG)
 
@@ -207,10 +204,10 @@ kubectl exec -it catalog-db-1 -- psql -U postgres -c "\l"
 ```
 ### Ingress
 ```bash
-minikube addons enable ingress
 
 
-kubectl get pods -n ingress-nginx
+
+curl -v "http://app.local/ws/socket.io/?EIO=4&transport=polling"
 
 ```
 
@@ -374,4 +371,9 @@ ID 14055: Loki Stack Monitoring – Specifically designed for the loki-stack cha
  kubectl get pods -l app=loki
 
  kubectl get pods -l app.kubernetes.io/name=grafana
+
+
+
+
+
 

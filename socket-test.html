@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Socket.IO Test</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body>
+    <h1>Socket.IO Test</h1>
+    <div id="status">Connecting...</div>
+    
+    <script>
+        const socket = io('http://app.local', {
+            path: '/ws'
+        });
+        
+        socket.on('connect', () => {
+            document.getElementById('status').innerHTML = '✅ Connected: ' + socket.id;
+            console.log('Connected!', socket.id);
+        });
+        
+        socket.on('connect_error', (err) => {
+            document.getElementById('status').innerHTML = '❌ Error: ' + err.message;
+            console.error('Connection error:', err);
+        });
+        
+        socket.on('disconnect', () => {
+            document.getElementById('status').innerHTML = '❌ Disconnected';
+        });
+    </script>
+</body>
+</html>

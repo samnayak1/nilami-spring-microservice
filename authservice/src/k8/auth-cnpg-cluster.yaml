@@ -20,7 +20,7 @@ spec:
   
   storage:
     size: 10Gi
-    storageClass: standard  
+    storageClass: local-path  
   
   resources:
     requests:
