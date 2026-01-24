@@ -288,28 +288,9 @@ helm install monitoring grafana/loki-stack \
   --set loki.image.tag=2.9.4 \
   --reuse-values
 
-helm upgrade monitoring grafana/loki-stack \
-  --set prometheus.enabled=true \
-  --set prometheus.nodeExporter.enabled=false \
-  --set prometheus.kubeStateMetrics.enabled=true \
-  --reuse-values
+ helm upgrade monitoring grafana/loki-stack -f monitoring-values.yaml
 
-  helm upgrade monitoring grafana/loki-stack \
-  --set prometheus.server.resources.requests.memory="256Mi" \
-  --set prometheus.server.resources.limits.memory="512Mi" \
-  --set prometheus.server.retention="7d" \
-  --set prometheus.server.global.scrape_interval="60s" \
-  --set prometheus.alertmanager.resources.requests.memory="32Mi" \
-  --set prometheus.alertmanager.resources.limits.memory="64Mi" \
-  --set prometheus.pushgateway.resources.requests.memory="16Mi" \
-  --set prometheus.pushgateway.resources.limits.memory="32Mi" \
-  --set grafana.resources.requests.memory="64Mi" \
-  --set grafana.resources.limits.memory="128Mi" \
-  --set loki.resources.requests.memory="64Mi" \
-  --set loki.resources.limits.memory="128Mi" \
-  --set promtail.resources.requests.memory="32Mi" \
-  --set promtail.resources.limits.memory="64Mi" \
-  --reuse-values
+ kubectl delete daemonset monitoring-prometheus-node-exporter
 
   kubectl rollout restart deployment -n monitoring
 

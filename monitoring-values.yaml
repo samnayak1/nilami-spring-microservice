@@ -1,0 +1,58 @@
+loki:
+  enabled: true
+  image:
+    tag: "2.9.4"
+  resources:
+    requests:
+      memory: 64Mi
+    limits:
+      memory: 128Mi
+
+promtail:
+  enabled: true
+  resources:
+    requests:
+      memory: 32Mi
+    limits:
+      memory: 64Mi
+
+grafana:
+  enabled: true
+  resources:
+    requests:
+      memory: 64Mi
+    limits:
+      memory: 128Mi
+
+prometheus:
+  enabled: true
+
+  nodeExporter:
+    enabled: false
+
+  kubeStateMetrics:
+    enabled: true
+
+  pushgateway:
+    enabled: false
+
+  server:
+    global:
+      scrape_interval: 60s
+      scrape_timeout: 10s
+
+    retention: 3d
+
+    resources:
+      requests:
+        memory: 256Mi
+      limits:
+        memory: 384Mi
+
+alertmanager:
+  enabled: true
+  resources:
+    requests:
+      memory: 32Mi
+    limits:
+      memory: 64Mi
