@@ -106,23 +106,7 @@ docker run --name <name-of-image> \
   <name-of-image>:latest
 ```
 
-### AWS ECR (Alternative)
 
-```bash
-# Setup AWS CLI
-sudo snap install aws-cli --classic
-aws configure
-
-# Authentication
-aws ecr get-login-password --region <region> | \
-  docker login --username AWS --password-stdin \
-  <account-number>.dkr.ecr.<region>.amazonaws.com
-
-# Push to ECR
-docker tag <name-of-app>:latest \
-  <AWS_ACCOUNT_ID>.dkr.ecr.ap-south-1.amazonaws.com/dev/samnayak1:v1
-docker push <AWS_ACCOUNT_ID>.dkr.ecr.ap-south-1.amazonaws.com/dev/samnayak1:v1
-```
 
 ### Local Minikube Registry (Alternative)
 
@@ -282,7 +266,6 @@ Tempo - Collects and stores traces (tracking requests as they flow through your 
 OpenTelemetry - Instruments your applications to send metrics, logs, and traces to the above tools
 Grafana - Visualizes everything in dashboards and handles alerting
 
-app -> opentelemettry -> tempo
 
 app -> Prometheus -> Grafana
 
@@ -303,6 +286,29 @@ helm install monitoring grafana/loki-stack \
 
   helm upgrade monitoring grafana/loki-stack \
   --set loki.image.tag=2.9.4 \
+  --reuse-values
+
+helm upgrade monitoring grafana/loki-stack \
+  --set prometheus.enabled=true \
+  --set prometheus.nodeExporter.enabled=false \
+  --set prometheus.kubeStateMetrics.enabled=true \
+  --reuse-values
+
+  helm upgrade monitoring grafana/loki-stack \
+  --set prometheus.server.resources.requests.memory="256Mi" \
+  --set prometheus.server.resources.limits.memory="512Mi" \
+  --set prometheus.server.retention="7d" \
+  --set prometheus.server.global.scrape_interval="60s" \
+  --set prometheus.alertmanager.resources.requests.memory="32Mi" \
+  --set prometheus.alertmanager.resources.limits.memory="64Mi" \
+  --set prometheus.pushgateway.resources.requests.memory="16Mi" \
+  --set prometheus.pushgateway.resources.limits.memory="32Mi" \
+  --set grafana.resources.requests.memory="64Mi" \
+  --set grafana.resources.limits.memory="128Mi" \
+  --set loki.resources.requests.memory="64Mi" \
+  --set loki.resources.limits.memory="128Mi" \
+  --set promtail.resources.requests.memory="32Mi" \
+  --set promtail.resources.limits.memory="64Mi" \
   --reuse-values
 
   kubectl rollout restart deployment -n monitoring
@@ -374,6 +380,33 @@ ID 14055: Loki Stack Monitoring – Specifically designed for the loki-stack cha
 
 
 
+## ingress
+
+# Add the Jetstack Helm repository
+helm repo add jetstack https://charts.jetstack.io
+helm repo update
+
+# Install cert-manager with CRDs
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.3/cert-manager.crds.yaml
+
+# Install cert-manager
+helm install cert-manager jetstack/cert-manager \
+  --namespace cert-manager \
+  --create-namespace \
+  --version v1.13.3
+
+
+  kubectl get clusterissuer
+
+  kubectl get certificate -n default
+
+  kubectl describe certificate app-local-tls -n default
 
 
 
+  get domain
+
+  kubectl get svc -n kube-system | grep traefik
+
+
+  kubectl top pods --all-namespaces --sort-by=memory
