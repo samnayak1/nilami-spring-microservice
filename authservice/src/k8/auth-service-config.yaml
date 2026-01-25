@@ -21,5 +21,5 @@ data:
 
   AUTH_SERVER_DB: nilami_auth
 
-  GATEWAY_URL: "http://api-gateway.local"
+  GATEWAY_URL: "http://app.local"
 

@@ -7,5 +7,5 @@ data:
 
   EUREKA_HOST: http://registry-service:8761
 
-  GATEWAY_URL: "http://api-gateway.local"
+  GATEWAY_URL: "http://app.local"
   
