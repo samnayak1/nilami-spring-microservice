@@ -65,7 +65,23 @@ sudo systemctl start k3s
 ```
 
 ---
+### Documentation
 
+## Swagger
+Forward the port 8084 of the service api-gateway
+
+```bash
+kubectl port-forward svc/api-gateway 8084:8084
+```
+Then visit
+
+```bash
+ http://localhost:8080/swagger-ui.html
+ ```
+
+
+
+---
 ## Image Management
 
 ### Docker Hub
