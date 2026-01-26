@@ -4,7 +4,9 @@
 
 Nilami is a microservices-based auction application designed for bidding. The platform allows users to bid for items while providing administrators with the tools to list and manage sales.
 
-The architecture is built using modern cloud-native technologies:
+
+
+The architecture is built using:
 
 - **Backend:** Spring Boot, Spring Data JPA
 - **Database Migration:** Flyway
@@ -13,6 +15,7 @@ The architecture is built using modern cloud-native technologies:
 - **Security & Identity:** Keycloak
 - **Secret Management:** Hashicorp Vault
 
+![Nilami Architechture](nilami.svg)
 ---
 
 ## Prerequisites
