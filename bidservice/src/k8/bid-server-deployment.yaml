@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bid-server-deployment
+  labels:
+    app: bid-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bid-server
+  template:
+    metadata:
+      labels:
+        app: bid-server
+    spec:
+      containers:
+        - name: bid-server
+          image: samnayak1/bidservice:1.0.26
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8082
+          env:
+            - name: SERVER_PORT
+              value: "8082"
+
+            - name: POSTGRES_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: bid-service-config
+                  key: POSTGRES_HOST
+
+            
+            - name: AUTH_SERVICE_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: bid-service-config
+                  key: AUTH_SERVICE_HOST
+
+            - name: CATALOG_SERVICE_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: bid-service-config
+                  key: CATALOG_SERVICE_HOST
+
+            - name: GATEWAY_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: bid-service-config
+                  key: GATEWAY_URL
+            - name: KAFKA_BROKER_SERVICE
+              valueFrom:
+                configMapKeyRef:
+                  name: bid-service-config
+                  key: KAFKA_BROKER_SERVICE
+
+            - name: KAFKA_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: bid-secret  
+                  key: KAFKA_USERNAME
+            - name: KAFKA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: bid-secret
+                  key: KAFKA_PASSWORD
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: bid-secret
+                  key: POSTGRES_DB
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: bid-secret
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: bid-secret
+                  key: POSTGRES_PASSWORD
+            - name: KAFKA_CLIENT_JAAS_CONFIG
+              valueFrom:
+                 configMapKeyRef: 
+                   name: bid-service-config
+                   key: KAFKA_CLIENT_JAAS_CONFIG
+                
+          resources:
+            limits:
+              memory: "768Mi"
+              cpu: "500m"
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+

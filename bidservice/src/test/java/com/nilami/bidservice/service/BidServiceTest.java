@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -29,19 +30,32 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+
 import org.mockito.junit.jupiter.MockitoExtension;
+
 
 import com.nilami.bidservice.controllers.requestTypes.BalanceReservationRequest;
 import com.nilami.bidservice.dto.ApiResponse;
 import com.nilami.bidservice.dto.BalanceReservationResponse;
 import com.nilami.bidservice.dto.BidDTO;
+import com.nilami.bidservice.dto.BidEventMessageQueuePayload;
 import com.nilami.bidservice.dto.ItemDTO;
 import com.nilami.bidservice.dto.Roles;
 import com.nilami.bidservice.dto.UserDTO;
-import com.nilami.bidservice.exceptions.BidPlacementException;
+import com.nilami.bidservice.exceptions.BidLessThanItemException;
+import com.nilami.bidservice.exceptions.InvalidBidException;
+import com.nilami.bidservice.exceptions.ItemExpiredException;
 
 import com.nilami.bidservice.models.Bid;
+import com.nilami.bidservice.models.BidStatus;
+import com.nilami.bidservice.models.IdempotentKeys;
+
+import com.nilami.bidservice.models.SagaLogs;
+import com.nilami.bidservice.models.SagaState;
 import com.nilami.bidservice.repositories.BidRepository;
+import com.nilami.bidservice.repositories.IdempotentKeyRepository;
+
+import com.nilami.bidservice.repositories.SagaLogsRepository;
 import com.nilami.bidservice.services.BidEventPublisher;
 import com.nilami.bidservice.services.bidServiceImplementations.BidServiceImplementation;
 import com.nilami.bidservice.services.externalClients.ItemClient;
@@ -54,239 +68,429 @@ import feign.Request;
 
 class BidServiceTest {
 
-    @Mock
-    private BidRepository bidRepository;
+        @Mock
+        private BidRepository bidRepository;
 
-    @Mock
-    private UserClient userClient;
+        @Mock
+        private IdempotentKeyRepository idempotentKeyRepository;
 
-    @Mock
-    private ItemClient itemClient;
-
-    @Mock
-   private  BidEventPublisher bidEventPublisher;
+        @Mock
+        private SagaLogsRepository sagaLogsRepository;
 
 
+        @Mock
+        private  BidEventPublisher bidEventPublisher;
 
-    @InjectMocks
-    private BidServiceImplementation bidService;
+        // @Mock
+        // private OutboxRepository outboxRepository;
 
+        @Mock
+        private UserClient userClient;
 
-    private static final String USER_EMAIL = "example@email.com";
-    private static final String USER_PROFILE_PICTURE = "https://www.example.fgk/pic1";
-    private static final String USER_NAME = "Ange Postecoglu";
-    private static final String ITEM_BRAND = "Nike";
-    private static final String ITEM_NAME = "Antique Shoes";
-    private static final String ITEM_DESCRIPTION = "Shoes worn in the 18th Century";
-    private static final List<String> PICTURE_IDS = List.of("pic1", "pic2", "pic3");
-    private static final String IDEMPOTENT_KEY = "idempotentKey456";
-
-    private UUID itemId;
-    private UUID userId;
-    private UUID sellerId;
-    private UUID categoryId;
-
-    @BeforeEach
-    void setUp() {
-        itemId = UUID.randomUUID();
-        userId = UUID.randomUUID();
-        sellerId = UUID.randomUUID();
-        categoryId = UUID.randomUUID();
-    }
+        // @Spy
+        // private ObjectMapper objectMapper =
+        // JsonMapper.builder()
+        //         .addModule(new JavaTimeModule())
+        //         .build();
 
 
-    @Test
+        @Mock
+        private ItemClient itemClient;
 
-    void testPlaceBid_Success() throws Exception {
-      
-        BigDecimal bidAmount = BigDecimal.valueOf(12);
-        BigDecimal userBalance = BigDecimal.valueOf(30);
-        BigDecimal lastBidAmount = BigDecimal.valueOf(11);
-        BigDecimal itemBasePrice = BigDecimal.valueOf(10);
-
-        UserDTO user = createUserDTO(userBalance);
-        ItemDTO item = createItemDTO(itemBasePrice);
-        Bid lastBid = createBid(lastBidAmount);
-        Bid expectedBid = createBid(bidAmount);
-        BalanceReservationResponse balanceResponse = createBalanceReservationResponse();
-
-        when(userClient.getUserDetails(userId.toString()))
-                .thenReturn(new ApiResponse<>(true, "user created", user));
-        when(itemClient.getItem(itemId.toString())).thenReturn(item);
-        when(bidRepository.findTopByItemIdOrderByCreatedDesc(itemId))
-                .thenReturn(Optional.of(lastBid));
-        when(userClient.reserveBalance(any(BalanceReservationRequest.class)))
-                .thenReturn(new ApiResponse<>(true, "balance reserved", balanceResponse));
-        when(userClient.commitBalanceReservation(balanceResponse.getReservationId()))
-                .thenReturn(new ApiResponse<>(true, "committed reservation", null));
-        when(bidRepository.save(any(Bid.class))).thenReturn(expectedBid);
-        
- 
-        BidDTO result = bidService.placeBid(itemId.toString(), bidAmount, userId.toString());
-
-
-        assertNotNull(result);
-        assertEquals(expectedBid.getPrice(), result.getPrice());
-        
-        verify(userClient, atLeastOnce()).getUserDetails(userId.toString());
-        verify(itemClient, atLeastOnce()).getItem(itemId.toString());
-        verify(bidRepository).findTopByItemIdOrderByCreatedDesc(itemId);
-        verify(userClient).reserveBalance(any(BalanceReservationRequest.class));
-        verify(userClient).commitBalanceReservation(balanceResponse.getReservationId());
-        verify(bidRepository).save(any(Bid.class));
-    }
-
-    @Test
-    void testPlaceBid_InsufficientBalance() {
-       
-        BigDecimal bidAmount = BigDecimal.valueOf(17);
-        BigDecimal userBalance = BigDecimal.valueOf(15);
-        BigDecimal lastBidAmount = BigDecimal.valueOf(11);
-        BigDecimal itemBasePrice = BigDecimal.valueOf(10);
-
-        UserDTO user = createUserDTO(userBalance);
-        ItemDTO item = createItemDTO(itemBasePrice);
-        Bid lastBid = createBid(lastBidAmount);
-
-        when(userClient.getUserDetails(userId.toString()))
-                .thenReturn(new ApiResponse<>(true, "user fetched", user));
-        when(itemClient.getItem(itemId.toString())).thenReturn(item);
-        when(bidRepository.findTopByItemIdOrderByCreatedDesc(itemId))
-                .thenReturn(Optional.of(lastBid));
-
-        FeignException feignException = new FeignException.BadRequest(
-                "Bad Request from user-service",
-                Request.create(Request.HttpMethod.POST, "/reserve", Map.of(), null, null, null),
-                null, null);
-        when(userClient.reserveBalance(any(BalanceReservationRequest.class)))
-                .thenThrow(feignException);
-
-        assertThrows(RuntimeException.class,
-                () -> bidService.placeBid(itemId.toString(), bidAmount, userId.toString()));
-
-        verify(bidRepository, never()).save(any(Bid.class));
-        verify(userClient, never()).commitBalanceReservation(anyString());
-    }
-
-    @Test
-    void testPlaceBid_LowerThanLastBid() {
     
-        BigDecimal bidAmount = BigDecimal.valueOf(10);
-        BigDecimal userBalance = BigDecimal.valueOf(15);
-        BigDecimal lastBidAmount = BigDecimal.valueOf(11);
-        BigDecimal itemBasePrice = BigDecimal.valueOf(10);
 
-        UserDTO user = createUserDTO(userBalance);
-        ItemDTO item = createItemDTO(itemBasePrice);
-        Bid lastBid = createBid(lastBidAmount);
+        @InjectMocks
+        private BidServiceImplementation bidService;
 
-        when(userClient.getUserDetails(userId.toString()))
-                .thenReturn(new ApiResponse<>(true, "user fetched", user));
-        when(itemClient.getItem(itemId.toString())).thenReturn(item);
-        when(bidRepository.findTopByItemIdOrderByCreatedDesc(itemId))
-                .thenReturn(Optional.of(lastBid));
+        private static final String USER_EMAIL = "example@email.com";
+        private static final String USER_PROFILE_PICTURE = "https://www.example.fgk/pic1";
+        private static final String USER_NAME = "Ange Postecoglu";
+        private static final String ITEM_BRAND = "Nike";
+        private static final String ITEM_NAME = "Antique Shoes";
+        private static final String ITEM_DESCRIPTION = "Shoes worn in the 18th Century";
+        private static final List<String> PICTURE_IDS = List.of("pic1", "pic2", "pic3");
+        private static final String IDEMPOTENT_KEY = "idempotentKey456";
 
-        BidPlacementException exception = assertThrows(BidPlacementException.class,
-                () -> bidService.placeBid(itemId.toString(), bidAmount, userId.toString()));
+        private UUID itemId;
+        private UUID userId;
+        private UUID sellerId;
+        private UUID categoryId;
+        private UUID idempotentKey;
+        private UUID previousBidUserId;
 
-        assertTrue(exception.getMessage().contains("Bid price must be higher"));
-        verify(bidRepository, never()).save(any(Bid.class));
-    }
+        @BeforeEach
+        void setUp() {
+                itemId = UUID.randomUUID();
+                userId = UUID.randomUUID();
+                sellerId = UUID.randomUUID();
+                categoryId = UUID.randomUUID();
+                idempotentKey = UUID.randomUUID();
+                previousBidUserId = UUID.randomUUID();
+        }
 
-    @Test
-    void testPlaceBid_LowerThanBasePrice() {
-       
-        BigDecimal bidAmount = BigDecimal.valueOf(9);
-        BigDecimal itemBasePrice = BigDecimal.valueOf(10);
+        @Test
 
-        ItemDTO item = createItemDTO(itemBasePrice);
+        void testPlaceBid_Success() {
 
-        when(itemClient.getItem(itemId.toString())).thenReturn(item);
+                BigDecimal bidAmount = BigDecimal.valueOf(12);
+                BigDecimal userBalance = BigDecimal.valueOf(30);
+                BigDecimal lastBidAmount = BigDecimal.valueOf(11);
+                BigDecimal itemBasePrice = BigDecimal.valueOf(10);
+                BigDecimal usersPreviousBidForItemPrice = BigDecimal.valueOf(10);
+                // BigDecimal amountUserHasToBid=
+                // bidAmount.subtract(usersPreviousBidForItemPrice);
 
-        BidPlacementException exception = assertThrows(BidPlacementException.class,
-                () -> bidService.placeBid(itemId.toString(), bidAmount, userId.toString()));
+                SagaLogs sagaLog = SagaLogs.builder()
+                                .sagaId(UUID.randomUUID())
+                                .itemId(itemId)
+                                .userId(userId)
+                                .currentState(SagaState.STARTED)
+                                .bidAmount(bidAmount)
+                                .build();
 
-        assertTrue(exception.getMessage().contains("Price must be higher than the item's base price"));
-        verify(bidRepository, never()).save(any(Bid.class));
-    }
+                IdempotentKeys idempotentKeyEntity = IdempotentKeys.builder()
+                                .id(idempotentKey)
+                                .bidAmount(bidAmount)
+                                .bidStatus(BidStatus.PENDING)
+                                .creatorId(userId)
+                                .itemId(itemId)
+                                .build();
 
-    @Test
+                UserDTO user = createUserDTO(userId, userBalance);
+                UserDTO previoudUserWhoBid = createUserDTO(previousBidUserId, userBalance);
+                ItemDTO item = createItemDTO(itemBasePrice, Date.from(Instant.now().plus(1, ChronoUnit.HOURS)));
+                Bid lastBid = createBid(lastBidAmount, previousBidUserId);
+                Bid expectedBid = createBid(bidAmount, userId);
+                Bid usersPreviousBid = createBid(usersPreviousBidForItemPrice, userId);
 
-    void testGetBidsOfItems_ReturnsListOfBids() {
-     
-        Bid bid1 = createBid(BigDecimal.valueOf(10.5));
-        Bid bid2 = createBid(BigDecimal.valueOf(12.0));
-        List<Bid> mockBids = List.of(bid1, bid2);
+                BalanceReservationResponse balanceResponse = createBalanceReservationResponse();
 
-        when(bidRepository.findByItemIdOrderByCreatedDesc(itemId)).thenReturn(mockBids);
+                when(userClient.getUserDetails(userId.toString()))
+                                .thenReturn(new ApiResponse<>(true, "user created", user));
+                when(userClient.getUserDetails(previousBidUserId.toString()))
+                                .thenReturn(new ApiResponse<>(true, "user created", previoudUserWhoBid));
+                when(itemClient.getItem(itemId.toString())).thenReturn(item);
+                when(bidRepository.findTopByItemIdOrderByCreatedDesc(itemId))
+                                .thenReturn(Optional.of(lastBid));
+                when(userClient.reserveBalance(any(BalanceReservationRequest.class)))
+                                .thenReturn(new ApiResponse<>(true, "balance reserved", balanceResponse));
+                when(userClient.commitBalanceReservation(balanceResponse.getReservationId()))
+                                .thenReturn(new ApiResponse<>(true, "committed reservation", null));
+                when(bidRepository.save(any(Bid.class))).thenReturn(expectedBid);
+                when(bidRepository.findTopByItemIdAndCreatorIdOrderByCreatedDesc(itemId, userId))
+                                .thenReturn(Optional.of(usersPreviousBid));
+                when(idempotentKeyRepository.findById(idempotentKey)).thenReturn(Optional.of(
+                                IdempotentKeys.builder()
+                                                .bidAmount(bidAmount)
+                                                .bidStatus(BidStatus.PENDING)
+                                                .creatorId(userId)
+                                                .itemId(itemId)
+                                                .build()));
 
- 
-        List<Bid> result = bidService.getBidsOfItems(itemId.toString());
-        assertNotNull(result);
-        assertEquals(2, result.size());
-        assertEquals(BigDecimal.valueOf(10.5), result.get(0).getPrice());
-        assertEquals(BigDecimal.valueOf(12.0), result.get(1).getPrice());
-        verify(bidRepository, times(1)).findByItemIdOrderByCreatedDesc(itemId);
-    }
+                when(idempotentKeyRepository.save(any(IdempotentKeys.class)))
+                                .thenReturn(idempotentKeyEntity);
 
-    @Test
-    void testGetBidsOfItems_ReturnsEmptyList() {
+                when(sagaLogsRepository.save(any(SagaLogs.class)))
+                                .thenReturn(sagaLog);
 
-        when(bidRepository.findByItemIdOrderByCreatedDesc(itemId)).thenReturn(List.of());
+                // when(outboxRepository.save(any(OutboxEvent.class)))
+                // .thenAnswer(invocation -> invocation.getArgument(0));
 
-        List<Bid> result = bidService.getBidsOfItems(itemId.toString());
+                doNothing().when(sagaLogsRepository).updateStatus(any(UUID.class), any(SagaState.class));
 
-     
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
-        verify(bidRepository, times(1)).findByItemIdOrderByCreatedDesc(itemId);
-    }
+                 doNothing().when(bidEventPublisher).sendBidEventToQueue(any(BidEventMessageQueuePayload.class));
+
+                BidDTO result = bidService.placeBid(itemId.toString(), bidAmount, userId.toString(),
+                                idempotentKey.toString());
+
+                assertNotNull(result);
+                assertEquals(expectedBid.getPrice(), result.getPrice());
+
+                verify(userClient, atLeastOnce()).getUserDetails(userId.toString());
+                verify(itemClient, atLeastOnce()).getItem(itemId.toString());
+                verify(bidRepository).findTopByItemIdOrderByCreatedDesc(itemId);
+                verify(userClient).reserveBalance(any(BalanceReservationRequest.class));
+                verify(userClient).commitBalanceReservation(balanceResponse.getReservationId());
+                verify(sagaLogsRepository, times(4)).updateStatus(any(UUID.class), any(SagaState.class));
+                verify(bidEventPublisher, times(1)).sendBidEventToQueue(any(BidEventMessageQueuePayload.class));
+                verify(bidRepository).save(any(Bid.class));
+              //  verify(outboxRepository, times(1)).save(any(OutboxEvent.class));
+        }
+
+        @Test
+        void testPlaceBid_InsufficientBalance() {
+
+                BigDecimal bidAmount = BigDecimal.valueOf(17);
+                BigDecimal userBalance = BigDecimal.valueOf(15);
+                BigDecimal lastBidAmount = BigDecimal.valueOf(11);
+                BigDecimal itemBasePrice = BigDecimal.valueOf(10);
+
+   
+                UserDTO previoudUserWhoBid = createUserDTO(previousBidUserId, userBalance);
+                ItemDTO item = createItemDTO(itemBasePrice, Date.from(Instant.now().plus(1, ChronoUnit.HOURS)));
+                Bid lastBid = createBid(lastBidAmount, previousBidUserId);
+
+                when(userClient.getUserDetails(previousBidUserId.toString()))
+                                .thenReturn(new ApiResponse<>(true, "user created", previoudUserWhoBid));
+                when(itemClient.getItem(itemId.toString())).thenReturn(item);
+                when(itemClient.getItem(itemId.toString())).thenReturn(item);
+                when(bidRepository.findTopByItemIdOrderByCreatedDesc(itemId))
+                                .thenReturn(Optional.of(lastBid));
+                when(bidRepository.findTopByItemIdAndCreatorIdOrderByCreatedDesc(itemId, userId))
+                                .thenReturn(Optional.empty());
+                when(idempotentKeyRepository.findById(idempotentKey)).thenReturn(Optional.of(
+                                IdempotentKeys.builder()
+                                                .bidAmount(bidAmount)
+                                                .bidStatus(BidStatus.PENDING)
+                                                .creatorId(userId)
+                                                .itemId(itemId)
+                                                .build()));
+                IdempotentKeys idempotentKeyEntity = IdempotentKeys.builder()
+                                .id(idempotentKey)
+                                .bidAmount(bidAmount)
+                                .bidStatus(BidStatus.PENDING)
+                                .creatorId(userId)
+                                .itemId(itemId)
+                                .build();
+                SagaLogs sagaLog = SagaLogs.builder()
+                                .sagaId(UUID.randomUUID())
+                                .itemId(itemId)
+                                .userId(userId)
+                                .currentState(SagaState.STARTED)
+                                .bidAmount(bidAmount)
+                                .build();
+                when(idempotentKeyRepository.save(any(IdempotentKeys.class)))
+                                .thenReturn(idempotentKeyEntity);
+
+                when(sagaLogsRepository.save(any(SagaLogs.class)))
+                                .thenReturn(sagaLog);
+
+                doNothing().when(sagaLogsRepository).updateStatus(any(UUID.class), any(SagaState.class));
+
+                when(sagaLogsRepository
+                                .findById(any(UUID.class))).thenReturn(Optional.of(
+                                                SagaLogs.builder().currentState(SagaState.STARTED)
+                                                                .bidAmount(bidAmount)
+                                                                .itemId(itemId)
+                                                                .sagaId(UUID.randomUUID())
+                                                                .userId(userId).build()));
+                FeignException feignException = new FeignException.BadRequest(
+                                "Bad Request from user-service",
+                                Request.create(Request.HttpMethod.POST, "/reserve", Map.of(), null, null, null),
+                                null, null);
+                when(userClient.reserveBalance(any(BalanceReservationRequest.class)))
+                                .thenThrow(feignException);
+
+                assertThrows(RuntimeException.class,
+                                () -> bidService.placeBid(itemId.toString(), bidAmount, userId.toString(),
+                                                idempotentKey.toString()));
+
+                verify(bidRepository, never()).save(any(Bid.class));
+                verify(userClient, never()).commitBalanceReservation(anyString());
+        }
+
+        @Test
+        void testPlaceBid_LowerThanLastBid() {
+                BigDecimal bidAmount = BigDecimal.valueOf(10);
+                BigDecimal userBalance = BigDecimal.valueOf(15);
+                BigDecimal lastBidAmount = BigDecimal.valueOf(11);
+                BigDecimal itemBasePrice = BigDecimal.valueOf(10);
+
+                ItemDTO item = createItemDTO(itemBasePrice, Date.from(Instant.now().plus(1, ChronoUnit.HOURS)));
+                Bid lastBid = createBid(lastBidAmount, previousBidUserId);
+   
+                UserDTO previoudUserWhoBid = createUserDTO(previousBidUserId, userBalance);
+        
+                when(userClient.getUserDetails(previousBidUserId.toString()))
+                                .thenReturn(new ApiResponse<>(true, "user created", previoudUserWhoBid));
+
+                when(itemClient.getItem(itemId.toString())).thenReturn(item);
+                when(bidRepository.findTopByItemIdOrderByCreatedDesc(itemId))
+                                .thenReturn(Optional.of(lastBid));
+          
+                when(idempotentKeyRepository.findById(idempotentKey)).thenReturn(Optional.of(
+                                IdempotentKeys.builder()
+                                                .bidAmount(bidAmount)
+                                                .bidStatus(BidStatus.PENDING)
+                                                .creatorId(userId)
+                                                .itemId(itemId)
+                                                .build()));
+
+                InvalidBidException exception = assertThrows(InvalidBidException.class,
+                                () -> bidService.placeBid(itemId.toString(), bidAmount, userId.toString(),
+                                                idempotentKey.toString()));
+
+                assertTrue(exception.getMessage().contains("Bid price must be higher"));
+                verify(bidRepository, never()).save(any(Bid.class));
+                verify(userClient, never()).reserveBalance(any(BalanceReservationRequest.class));
+        }
+
+        @Test
+        void testPlaceBid_LowerThanBasePrice() {
+                BigDecimal bidAmount = BigDecimal.valueOf(9);
+                BigDecimal itemBasePrice = BigDecimal.valueOf(10);
+
+                ItemDTO item = createItemDTO(itemBasePrice, Date.from(Instant.now().plus(1, ChronoUnit.HOURS)));
+
+                when(idempotentKeyRepository.findById(idempotentKey)).thenReturn(Optional.of(
+                                IdempotentKeys.builder()
+                                                .bidAmount(bidAmount)
+                                                .bidStatus(BidStatus.PENDING)
+                                                .creatorId(userId)
+                                                .itemId(itemId)
+                                                .build()));
+
+                when(itemClient.getItem(itemId.toString())).thenReturn(item);
+                when(bidRepository.findTopByItemIdOrderByCreatedDesc(itemId))
+                                .thenReturn(Optional.empty());
+
+            
+
+                BidLessThanItemException exception = assertThrows(BidLessThanItemException.class,
+                                () -> bidService.placeBid(itemId.toString(), bidAmount, userId.toString(),
+                                                idempotentKey.toString()));
+
+                assertTrue(exception.getMessage().contains("Price must be higher than the item's base price"));
+                verify(bidRepository, never()).save(any(Bid.class));
+                verify(userClient, never()).reserveBalance(any(BalanceReservationRequest.class));
+        }
+
+        @Test
+        void testPlaceBid_ItemExpired() {
+                BigDecimal bidAmount = BigDecimal.valueOf(15);
+                BigDecimal itemBasePrice = BigDecimal.valueOf(10);
+
+                // Item expired 1 hour ago
+                ItemDTO item = createItemDTO(itemBasePrice, Date.from(Instant.now().minus(1, ChronoUnit.HOURS)));
 
 
-    private UserDTO createUserDTO(BigDecimal balance) {
-        return UserDTO.builder()
-                .id(userId)
-                .age(20)
-                .email(USER_EMAIL)
-                .balance(balance)
-                .profilePicture(USER_PROFILE_PICTURE)
-                .role(Roles.CUSTOMER)
-                .name(USER_NAME)
-                .build();
-    }
 
-    private ItemDTO createItemDTO(BigDecimal basePrice) {
-        return ItemDTO.builder()
-                .id(itemId)
-                .basePrice(basePrice)
-                .brand(ITEM_BRAND)
-                .deleted(false)
-                .title(ITEM_NAME)
-                .createdAt(Instant.now())
-                .description(ITEM_DESCRIPTION)
-                .expiryTime(Date.from(Instant.now().plus(1, ChronoUnit.HOURS)))
-                .categoryId(categoryId)
-                .creatorUserId(sellerId)
-                .updatedAt(Instant.now())
-                .pictureIds(PICTURE_IDS)
-                .build();
-    }
+                when(idempotentKeyRepository.findById(idempotentKey)).thenReturn(Optional.of(
+                                IdempotentKeys.builder()
+                                                .bidAmount(bidAmount)
+                                                .bidStatus(BidStatus.PENDING)
+                                                .creatorId(userId)
+                                                .itemId(itemId)
+                                                .build()));
 
-    private Bid createBid(BigDecimal price) {
-        return Bid.builder()
-                .id(UUID.randomUUID())
-                .created(Instant.now())
-                .updated(Instant.now())
-                .itemId(itemId)
-                .creatorId(userId)
-                .price(price)
-                .build();
-    }
+                when(itemClient.getItem(itemId.toString())).thenReturn(item);
+                when(bidRepository.findTopByItemIdOrderByCreatedDesc(itemId))
+                                .thenReturn(Optional.empty());
 
-    private BalanceReservationResponse createBalanceReservationResponse() {
-        return new BalanceReservationResponse(
-                UUID.randomUUID().toString(),
-                userId.toString(),
-                IDEMPOTENT_KEY);
-    }
+                ItemExpiredException exception = assertThrows(ItemExpiredException.class,
+                                () -> bidService.placeBid(itemId.toString(), bidAmount, userId.toString(),
+                                                idempotentKey.toString()));
+
+                assertTrue(exception.getMessage().contains("has expired"));
+                verify(bidRepository, never()).save(any(Bid.class));
+                verify(userClient, never()).reserveBalance(any(BalanceReservationRequest.class));
+        }
+
+        @Test
+        void testPlaceBid_ItemNotFound() {
+
+                BigDecimal bidAmount = BigDecimal.valueOf(15);
+      
+                UserDTO previoudUserWhoBid = createUserDTO(previousBidUserId, BigDecimal.valueOf(50.00));
+
+                FeignException feignException = new FeignException.BadRequest(
+                                "Bad Request from item-service",
+                                Request.create(Request.HttpMethod.GET, "/details", Map.of(), null, null, null),
+                                null, null);
+                when(itemClient.getItem(any(String.class)))
+                                .thenThrow(feignException);
+
+                Bid lastBid = createBid(BigDecimal.valueOf(16.00), previousBidUserId);
+
+                when(bidRepository.findTopByItemIdOrderByCreatedDesc(itemId))
+                                .thenReturn(Optional.of(lastBid));
+                when(userClient.getUserDetails(previousBidUserId.toString()))
+                                .thenReturn(new ApiResponse<>(true, "user created", previoudUserWhoBid));
+
+                assertThrows(RuntimeException.class,
+                                () -> bidService.placeBid(itemId.toString(), bidAmount, userId.toString(),
+                                                idempotentKey.toString()));
+
+                verify(bidRepository, never()).save(any(Bid.class));
+                verify(userClient, never()).reserveBalance(any(BalanceReservationRequest.class));
+
+        }
+
+        @Test
+
+        void testGetBidsOfItems_ReturnsListOfBids() {
+
+                Bid bid1 = createBid(BigDecimal.valueOf(10.5), previousBidUserId);
+                Bid bid2 = createBid(BigDecimal.valueOf(12.0), userId);
+                List<Bid> mockBids = List.of(bid1, bid2);
+
+                when(bidRepository.findByItemIdOrderByCreatedDesc(itemId)).thenReturn(mockBids);
+
+                List<Bid> result = bidService.getBidsOfItems(itemId.toString());
+                assertNotNull(result);
+                assertEquals(2, result.size());
+                assertEquals(BigDecimal.valueOf(10.5), result.get(0).getPrice());
+                assertEquals(BigDecimal.valueOf(12.0), result.get(1).getPrice());
+                verify(bidRepository, times(1)).findByItemIdOrderByCreatedDesc(itemId);
+        }
+
+        @Test
+        void testGetBidsOfItems_ReturnsEmptyList() {
+
+                when(bidRepository.findByItemIdOrderByCreatedDesc(itemId)).thenReturn(List.of());
+
+                List<Bid> result = bidService.getBidsOfItems(itemId.toString());
+
+                assertNotNull(result);
+                assertTrue(result.isEmpty());
+                verify(bidRepository, times(1)).findByItemIdOrderByCreatedDesc(itemId);
+        }
+
+
+        private UserDTO createUserDTO(UUID userId, BigDecimal balance) {
+                return UserDTO.builder()
+                                .id(userId)
+                                .age(20)
+                                .email(USER_EMAIL)
+                                .balance(balance)
+                                .profilePicture(USER_PROFILE_PICTURE)
+                                .role(Roles.CUSTOMER)
+                                .name(USER_NAME)
+                                .build();
+        }
+
+        private ItemDTO createItemDTO(BigDecimal basePrice, Date expiryTime) {
+                return ItemDTO.builder()
+                                .id(itemId)
+                                .basePrice(basePrice)
+                                .brand(ITEM_BRAND)
+                                .deleted(false)
+                                .title(ITEM_NAME)
+                                .createdAt(Instant.now())
+                                .description(ITEM_DESCRIPTION)
+                                .expiryTime(expiryTime)
+                                .categoryId(categoryId)
+                                .creatorUserId(sellerId)
+                                .updatedAt(Instant.now())
+                                .pictureIds(PICTURE_IDS)
+                                .build();
+        }
+
+        private Bid createBid(BigDecimal price, UUID userId) {
+                return Bid.builder()
+                                .id(UUID.randomUUID())
+                                .created(Instant.now())
+                                .updated(Instant.now())
+                                .itemId(itemId)
+                                .creatorId(userId)
+                                .price(price)
+                                .build();
+        }
+
+        private BalanceReservationResponse createBalanceReservationResponse() {
+                return new BalanceReservationResponse(
+                                UUID.randomUUID().toString(),
+                                userId.toString(),
+                                IDEMPOTENT_KEY);
+        }
 }

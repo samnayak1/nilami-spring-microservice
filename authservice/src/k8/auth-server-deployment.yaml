@@ -1,0 +1,104 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-server
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-server
+  template:
+    metadata:
+      labels:
+        app: auth-server
+    spec:
+      containers:
+        - name: auth-server
+          image: samnayak1/auth-server:1.0.16
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8081
+
+          env:
+            - name: SERVER_PORT
+              value: "8081"
+            - name: KEYCLOAK_CLIENT_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: auth-service-config
+                  key: KEYCLOAK_CLIENT_ID
+            - name: KEYCLOAK_REALM
+              valueFrom:
+                configMapKeyRef:
+                  name: auth-service-config
+                  key: KEYCLOAK_REALM
+            - name: KEYCLOAK_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: auth-service-config
+                  key: KEYCLOAK_URL
+
+            - name: AUTH_SERVER_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: auth-service-config
+                  key: AUTH_SERVER_DB
+            - name: AUTH_SERVER_POSTGRES_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: auth-service-config
+                  key: AUTH_SERVER_POSTGRES_HOST
+
+  
+
+            
+            - name: CATALOG_SERVICE_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: auth-service-config
+                  key: CATALOG_SERVICE_HOST
+
+            - name: BID_SERVICE_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: auth-service-config
+                  key: BID_SERVICE_HOST
+
+  
+            - name: GATEWAY_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: auth-service-config
+                  key: GATEWAY_URL
+
+              
+
+            - name: KEYCLOAK_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: auth-service-secrets
+                  key: KEYCLOAK_CLIENT_SECRET
+            - name: KEYCLOAK_ADMIN
+              valueFrom:
+                secretKeyRef:
+                  name: auth-service-secrets
+                  key: KEYCLOAK_ADMIN
+            - name: KEYCLOAK_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: auth-service-secrets
+                  key: KEYCLOAK_ADMIN_PASSWORD
+
+            - name: AUTH_SERVER_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: auth-service-secrets
+                  key: AUTH_SERVER_DB_PASSWORD
+            - name: AUTH_SERVER_DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: auth-service-secrets
+                  key: AUTH_SERVER_DB_USER
+
+                

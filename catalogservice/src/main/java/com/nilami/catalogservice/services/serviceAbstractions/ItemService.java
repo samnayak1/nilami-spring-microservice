@@ -7,16 +7,19 @@ import org.springframework.data.domain.Pageable;
 
 import com.nilami.catalogservice.controllers.requestTypes.CreateItemRequestType;
 import com.nilami.catalogservice.dto.ItemDTO;
+import com.nilami.catalogservice.dto.SimplifiedItemDTO;
 import com.nilami.catalogservice.models.Item;
 
 public interface ItemService{
     ItemDTO getItem(String itemId);
 
-    Page<ItemDTO> getAllItems(Pageable pageable);
+    Page<ItemDTO> getAllItems(String categoryId,Pageable pageable);
 
     boolean checkIfExpiryDatePassed(String itemId);
 
     Item createItem(CreateItemRequestType request,String userId);
+
+    List<SimplifiedItemDTO> getItemDetailsGivenIds(List<String> itemIds);
 
     Page<ItemDTO> searchItem(String keyword, Pageable pageable);
 

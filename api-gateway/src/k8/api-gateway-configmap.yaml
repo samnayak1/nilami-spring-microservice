@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gateway-config
+data:
+
+  AUTH_SERVICE_HOST: http://auth-service:8081
+  CATALOG_SERVICE_HOST: http://catalog-server-service:8085
+  BID_SERVICE_HOST: http://bid-server-service:8082

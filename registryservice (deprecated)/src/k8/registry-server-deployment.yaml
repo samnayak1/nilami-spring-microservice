@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: registry-service
+spec:
+  selector:
+    matchLabels:
+      app: registry-service
+  template:
+    metadata:
+      labels:
+        app: registry-service
+    spec:
+      containers:
+      - name: registry-service
+        image: samnayak1/registryservice:1.0.3
+        imagePullPolicy: IfNotPresent
+        resources:
+          limits:
+            memory: "1024Mi"
+          requests: 
+            memory: "768Mi"
+        ports:
+        - containerPort: 8761

@@ -1,6 +1,7 @@
 package com.nilami.catalogservice.controllers.v1;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.net.URL;
 import java.util.List;
@@ -16,13 +17,17 @@ import com.nilami.catalogservice.controllers.requestTypes.AddPicturesToItemReque
 import com.nilami.catalogservice.controllers.requestTypes.CreateItemRequestType;
 import com.nilami.catalogservice.dto.ApiResponse;
 import com.nilami.catalogservice.dto.ItemDTO;
+import com.nilami.catalogservice.dto.SimplifiedItemDTO;
 import com.nilami.catalogservice.models.Item;
 import com.nilami.catalogservice.services.serviceAbstractions.FileUploadService;
 import com.nilami.catalogservice.services.serviceAbstractions.ItemService;
 
+import io.swagger.v3.oas.annotations.Parameter;
+
 @RestController
 @RequestMapping("/api/v1/items")
 @RequiredArgsConstructor
+@Slf4j
 public class ItemController {
 
     private final ItemService itemService;
@@ -31,8 +36,8 @@ public class ItemController {
 
     @GetMapping("/test")
     public ResponseEntity<String> testController(
-            @RequestHeader("X-User-Id") String userId,
-            @RequestHeader("X-User-Roles") String roles) {
+            @Parameter(hidden = true) @RequestHeader("X-User-Id") String userId,
+           @Parameter(hidden = true) @RequestHeader("X-User-Roles") String roles) {
 
         System.out.println("roles: " + roles);
         System.out.println("userId: " + userId);
@@ -41,45 +46,39 @@ public class ItemController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ItemDTO> getItem(@PathVariable String id) {
-        try {
+
             return ResponseEntity.ok(itemService.getItem(id));
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to retrieve item: " + e.getMessage(), e);
-        }
+      
     }
 
     @GetMapping
-    public ResponseEntity<Page<ItemDTO>> getAllItems(Pageable pageable, @RequestHeader("X-User-Id") String userId) {
-        try {
-            System.out.println("User: " + userId + " requested to get all items");
-            return ResponseEntity.ok(itemService.getAllItems(pageable));
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to retrieve items: " + e.getMessage(), e);
-        }
+    public ResponseEntity<Page<ItemDTO>> getAllItems(Pageable pageable,
+         @Parameter(hidden = true) @RequestHeader("X-User-Id") String userId,
+        @RequestParam(required = false) String categoryId) {
+   
+            log.debug("User: " + userId + " requested to get all items");
+            return ResponseEntity.ok(itemService.getAllItems(categoryId, pageable));
+    
     }
 
     @GetMapping("/{id}/expiry")
     public ResponseEntity<Boolean> checkExpiry(@PathVariable String id) {
-        try {
+   
             return ResponseEntity.ok(itemService.checkIfExpiryDatePassed(id));
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to check expiry: " + e.getMessage(), e);
-        }
+     
     }
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'SELLER')")
     public ResponseEntity<ApiResponse<String>> createItem(
             @RequestBody CreateItemRequestType request,
-            @RequestHeader("X-User-Id") String userId) {
-        try {
+            @Parameter(hidden = true) @RequestHeader("X-User-Id") String userId) {
+     
             Item response = itemService.createItem(request, userId);
             return new ResponseEntity<ApiResponse<String>>(
                     new ApiResponse<String>(true, "Item created", response.getId().toString()),
                     HttpStatus.CREATED);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to create item: " + e.getMessage(), e);
-        }
+      
     }
 
 
@@ -90,8 +89,8 @@ public class ItemController {
     @PreAuthorize("hasAnyRole('ADMIN', 'SELLER')")
     public ResponseEntity<ApiResponse<List<URL>>> addPicturesToItem(
             @RequestBody AddPicturesToItemRequest request,
-            @RequestHeader("X-User-Id") String userId) {
-        try {
+            @Parameter(hidden = true) @RequestHeader("X-User-Id") String userId) {
+  
 
             Boolean hasPicturesBeenAdded = itemService.savePictureIdsForItem(request.getItemId(), userId,
                     request.getPictureIds());
@@ -111,18 +110,31 @@ public class ItemController {
 
             return ResponseEntity.ok().body(new ApiResponse<List<URL>>(true, "pictures have been added", pictureUrls));
 
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to create item: " + e.getMessage(), e);
-        }
+    
     }
     @GetMapping("/search")
     public ResponseEntity<Page<ItemDTO>> searchItems(
             @RequestParam String keyword,
             Pageable pageable) {
-        try {
+  
             return ResponseEntity.ok(itemService.searchItem(keyword, pageable));
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to search items: " + e.getMessage(), e);
-        }
+      
     }
+
+
+    
+    @PostMapping("/details")
+    public ResponseEntity<List<SimplifiedItemDTO>> getItemDetails(
+            @RequestBody List<String> itemIds
+    ) {
+ 
+        List<SimplifiedItemDTO> items =
+                itemService.getItemDetailsGivenIds(itemIds);
+
+        return ResponseEntity.ok(items);
+      
+    }
+
+
+
 }

@@ -1,0 +1,31 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: auth-db 
+  namespace: default
+spec:
+  instances: 1
+  
+  postgresql:
+    parameters:
+      max_connections: "100"
+      shared_buffers: "256MB"
+  
+  bootstrap:
+    initdb:
+      database: nilami_auth
+      owner: samnayak1
+      secret:
+        name: auth-db-superuser
+  
+  storage:
+    size: 10Gi
+    storageClass: local-path  
+  
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "500m"
+    limits:
+      memory: "1Gi"
+      cpu: "1000m"

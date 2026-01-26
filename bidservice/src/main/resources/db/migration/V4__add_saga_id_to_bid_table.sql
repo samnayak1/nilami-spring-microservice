@@ -1,0 +1,2 @@
+ALTER TABLE bids
+ADD COLUMN saga_id UUID;

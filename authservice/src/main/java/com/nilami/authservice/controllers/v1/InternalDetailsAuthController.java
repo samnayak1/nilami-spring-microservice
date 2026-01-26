@@ -23,10 +23,12 @@ import com.nilami.authservice.exceptions.UserDoesNotExistException;
 import com.nilami.authservice.services.BalanceService;
 import com.nilami.authservice.services.UserService;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
+@Hidden
 @RequestMapping("/api/v1/internal/auth")
 @RequiredArgsConstructor
 public class InternalDetailsAuthController {

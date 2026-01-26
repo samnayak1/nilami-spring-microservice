@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: catalog-config-map
+data:
+  POSTGRES_HOST: catalog-db-rw
+
+
+  GATEWAY_URL: "http://app.local"
+
+  AUTH_SERVICE_HOST: http://auth-service:8081
+  BID_SERVICE_HOST: http://bid-server-service:8082
+  

@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kafka
+  namespace: kafka
+spec:
+  serviceName: kafka-headless
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka
+  template:
+    metadata:
+      labels:
+        app: kafka
+    spec:
+      containers:
+        - name: kafka
+          image: apache/kafka:3.7.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: CLUSTER_ID
+              value: "4L6g3nShT-eMCtK-X86sw"
+            - name: KAFKA_OPTS
+              value: "-Djava.security.auth.login.config=/etc/kafka/secrets/kafka_server_jaas.conf"
+            - name: KAFKA_HEAP_OPTS
+              value: "-Xms256m -Xmx256m"
+          
+          command:
+            - sh
+            - -euc
+            - |
+              export BROKER_ID=${HOSTNAME##*-}
+              export POD_NAME=${HOSTNAME}
+
+              sed "s/\${BROKER_ID}/${BROKER_ID}/g; s/\${POD_NAME}/${POD_NAME}/g" \
+              /opt/kafka/config/server.properties.template > /tmp/server.properties
+
+              /opt/kafka/bin/kafka-storage.sh format -t "$CLUSTER_ID" -c /tmp/server.properties --ignore-formatted || true
+
+              exec /opt/kafka/bin/kafka-server-start.sh /tmp/server.properties
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "300Mi"
+            limits:
+              cpu: "500m"
+              memory: "450Mi"
+          ports:
+            - containerPort: 9092
+              name: sasl-plaintext
+            - containerPort: 9093
+              name: controller
+
+          volumeMounts:
+            - name: kafka-data
+              mountPath: /var/lib/kafka/data
+            - name: kafka-config
+              mountPath: /opt/kafka/config/server.properties.template
+              subPath: server.properties.template
+            - name: kafka-jaas
+              mountPath: /etc/kafka/secrets
+              readOnly: true
+
+      volumes:
+        - name: kafka-config
+          configMap:
+            name: kafka-config
+        - name: kafka-jaas
+          secret:
+            secretName: kafka-jaas-config
+
+  volumeClaimTemplates:
+    - metadata:
+        name: kafka-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: local-path
+        resources:
+          requests:
+            storage: 1Gi

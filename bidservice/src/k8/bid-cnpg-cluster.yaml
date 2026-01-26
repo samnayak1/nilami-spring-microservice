@@ -1,0 +1,30 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: bid-db 
+spec:
+  instances: 1
+  
+  postgresql:
+    parameters:
+      max_connections: "100"
+      shared_buffers: "256MB"
+  
+  bootstrap:
+    initdb:
+      database: nilami_bid
+      owner: samnayak1
+      secret:
+        name: bid-db-superuser
+  
+  storage:
+    size: 10Gi
+    storageClass: local-path  
+  
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "500m"
+    limits:
+      memory: "1Gi"
+      cpu: "1000m"

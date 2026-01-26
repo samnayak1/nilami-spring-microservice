@@ -1,14 +1,30 @@
-import { Kafka } from 'kafkajs';
+import { Kafka, logLevel } from 'kafkajs';
 import { KafkaConsumerGroups, KafkaTopics } from './enums/kafkaEnums';
 import { BidEvent, BidEventSchema } from './validators/bidAddedPayloadValidator';
 
-
 export const kafka = new Kafka({
   clientId: 'websocket-service',
-  brokers: [process.env.KAFKA_BROKER],
+  brokers: [process.env.KAFKA_BROKER!],
+
   ssl: false,
-  sasl: undefined,
-  logLevel: 2 
+
+  logLevel: logLevel.DEBUG,
+
+   retry: {
+    initialRetryTime: 300,  
+    retries: 10,            
+    maxRetryTime: 30_000    
+  },
+
+  sasl: {
+
+    //It is SASL plaintext btw
+    mechanism: 'plain',
+
+    //take from kubernets env file
+    username: process.env.KAFKA_USERNAME!,
+    password: `${process.env.KAFKA_PASSWORD}`
+  },
 });
 
 export const consumer = kafka.consumer({ groupId: KafkaConsumerGroups.ItemBidConsumer });
@@ -22,7 +38,7 @@ export const consumer = kafka.consumer({ groupId: KafkaConsumerGroups.ItemBidCon
 //NOTE: To have 3 different consumers in the same consumer group, the groupId should be the same
 //In our case it will be KafkaConsumerGroups.ItemBidConsumer.
 
-//backpressure is when consumers read slower than producers. For our case, we don't have many requests so it's fine.
+
 export const startBidConsumer = async (onBid: (event: BidEvent) => void) => {
   await consumer.connect();
   await consumer.subscribe({
@@ -31,8 +47,8 @@ export const startBidConsumer = async (onBid: (event: BidEvent) => void) => {
   });
 
   consumer.run({
-    eachMessage: async ({partition, topic, message }) => {
-    
+    eachMessage: async ({ partition, topic, message }) => {
+
       const parsed = JSON.parse(message.value!.toString());
       const event = BidEventSchema.parse(parsed);
       onBid(event);

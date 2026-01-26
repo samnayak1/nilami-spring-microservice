@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
 
@@ -26,6 +27,7 @@ import com.nilami.catalogservice.services.serviceAbstractions.FileUploadService;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Slf4j
 public class ItemDTO {
 
 
@@ -53,6 +55,8 @@ public class ItemDTO {
 
     private boolean deleted;
 
+    private BigDecimal highestBidPrice;
+
     public static ItemDTO toItemDTO(Item item,FileUploadService fileService) {
         return ItemDTO.builder()
                 .id(item.getId())
@@ -66,6 +70,7 @@ public class ItemDTO {
                         try {
                             return fileService.generateDownloadPresignedUrl(item.getId()+"/"+pictureId).toString();
                         } catch (Exception e) {
+                            log.error("Could not generate download presign url for {}",item.getId()+"/"+pictureId);
                             return null;
                         }
                     })

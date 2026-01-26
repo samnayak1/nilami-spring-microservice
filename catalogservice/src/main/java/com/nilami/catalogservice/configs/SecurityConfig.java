@@ -24,10 +24,10 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/v3/api-docs/**",
                     "/swagger-ui/**",
-                    "/swagger-ui.html"
+                    "/swagger-ui.html",
+                    "/actuator/prometheus", "/actuator/health/**", "/actuator/info"
                 ).permitAll()
            
-                .requestMatchers("/actuator/**").permitAll()
             
                 .anyRequest().authenticated()
             )

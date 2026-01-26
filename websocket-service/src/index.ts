@@ -1,5 +1,5 @@
 import express from "express";
-import { registerWithEureka } from "./eureka";
+
 import dotenv from "dotenv";
 import { startBidConsumer } from "./kafka/kafkaBidConsumerSetup";
 import { SocketManager } from "./websockets/WebsocketGatewayManager";
@@ -27,10 +27,12 @@ startBidConsumer((event) => {
     }
 });
 const httpServer=app.listen(PORT, () => {
+  console.log("SERVER STARTING!!!")
   console.log(`Server running on port ${PORT}`);
-  registerWithEureka(PORT); 
-});
 
+
+});
+//TODO: get token from client and hit validate token endpoint
 const socketManager = new SocketManager();
 socketManager.init(httpServer);
 socketManager.onConnection((socket) => {

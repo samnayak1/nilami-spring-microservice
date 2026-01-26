@@ -50,4 +50,7 @@ public class Bid {
   @Column(nullable = false)
   private BigDecimal price;
 
+  @Column(nullable = false)
+  private UUID sagaId;
+
 }

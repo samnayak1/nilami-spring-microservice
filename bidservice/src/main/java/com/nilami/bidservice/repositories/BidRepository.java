@@ -6,12 +6,17 @@ import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Repository;
 
+import com.nilami.bidservice.dto.GetBidsOfUserAlongWithHighestBidForItemResponseBody;
+import com.nilami.bidservice.dto.GetHighestBidAlongWithItemIds;
 import com.nilami.bidservice.models.Bid;
 
 import jakarta.persistence.LockModeType;
+import jakarta.transaction.Transactional;
 
 
 @Repository
@@ -24,6 +29,46 @@ public interface BidRepository extends JpaRepository<Bid,UUID>{
      Optional<Bid> findById(@NonNull UUID id);
 
     List<Bid> findByItemIdOrderByCreatedDesc(UUID itemId);
+ 
+    Optional<Bid> findTopByItemIdAndCreatorIdOrderByCreatedDesc(
+        UUID itemId,
+        UUID creatorId
+    );
+
+
+    @Query(value="""
+            SELECT 
+            b.item_id as itemId,
+            MAX(b.price) as highestBidPrice
+            FROM bids b
+            WHERE b.item_id IN :itemIds
+            GROUP BY b.item_id
+            """,nativeQuery = true)
+    List<GetHighestBidAlongWithItemIds> getItemsHighestBidGivenItemIds(@Param("itemIds") List<UUID> itemIds);
+
+    @Query(value="""
+            SELECT 
+            t.id as id,
+            t.created_at as createdAt,
+            t.item_id as itemId,
+            t.creator_id as creatorId,
+            t.price as price,
+            CASE WHEN t.price = t.global_max THEN TRUE ElSE false END as isHighestBid
+            FROM ( SELECT 
+              b.id,
+              b.created_at,
+              b.item_id,
+              b.creator_id,
+              b.price,
+              MAX(b.price) OVER(PARTITION BY b.item_id) as global_max
+              FROM bids b
+               ) t
+             WHERE t.creator_id = :userId
+            """, nativeQuery = true)
+    List<GetBidsOfUserAlongWithHighestBidForItemResponseBody> getBidsOfUserAlongWithHighestBidForItemRepositoryQuery(UUID userId);
+
+    @Transactional
+    long deleteBySagaId(UUID fromString);
 
 
 }

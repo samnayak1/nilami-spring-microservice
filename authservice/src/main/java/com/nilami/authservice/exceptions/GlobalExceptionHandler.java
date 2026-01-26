@@ -30,4 +30,10 @@ public class GlobalExceptionHandler {
         ErrorResponse error = new ErrorResponse("RESERVATION_NOT_FOUND_EXCEPTION", ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
+
+    @ExceptionHandler(KeycloakClientError.class)
+    public ResponseEntity<KeycloakClientError> handleKeycloakClientError(KeycloakClientError ex) {
+        KeycloakClientError error = new KeycloakClientError("Keycloak Client",ex);
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
 }

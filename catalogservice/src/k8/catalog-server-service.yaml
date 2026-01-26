@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: catalog-server-service
+  labels:
+    metrics: dev-monitor
+spec:
+  selector:
+    app: catalog-server
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8085 
+      targetPort: 8085
+  type: LoadBalancer

@@ -9,14 +9,16 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.nilami.bidservice.configs.FeignHeaderForwardingConfig;
-
+import com.nilami.bidservice.controllers.requestTypes.BalanceRequest;
 import com.nilami.bidservice.controllers.requestTypes.BalanceReservationRequest;
 import com.nilami.bidservice.dto.ApiResponse;
 import com.nilami.bidservice.dto.BalanceReservationResponse;
 import com.nilami.bidservice.dto.UserDTO;
-import com.nilami.bidservice.services.externalClients.fallback.UserClientFallback;
 
-@FeignClient(name = "AUTH-SERVICE", url = "${AUTH_SERVICE_HOST}", configuration = FeignHeaderForwardingConfig.class, path = "/api/v1/internal/auth", fallback = UserClientFallback.class)
+
+@FeignClient(name = "auth-service",
+url = "${AUTH_SERVICE_HOST}",
+configuration = FeignHeaderForwardingConfig.class, path = "/api/v1/internal/auth")
 public interface UserClient {
 
     @GetMapping("/details")
@@ -29,6 +31,14 @@ public interface UserClient {
     @PostMapping("/balance/commit/{reservationId}")
     ApiResponse<Void> commitBalanceReservation(
             @PathVariable String reservationId);
+
+    @PostMapping("/balance/subtract")
+    ApiResponse<Void> subtractBalanceFromUser(
+            @RequestBody BalanceRequest balanceRequest);
+
+    @PostMapping("/balance/add")
+    ApiResponse<Void> addBalanceToUser(
+            @RequestBody BalanceRequest balanceRequest);
 
     @PostMapping("/balance/cancel/{reservationId}")
     ApiResponse<Void> cancelBalanceReservation(
