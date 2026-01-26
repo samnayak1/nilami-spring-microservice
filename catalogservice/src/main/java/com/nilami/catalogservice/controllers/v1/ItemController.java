@@ -46,32 +46,26 @@ public class ItemController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ItemDTO> getItem(@PathVariable String id) {
-        try {
+
             return ResponseEntity.ok(itemService.getItem(id));
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to retrieve item: " + e.getMessage(), e);
-        }
+      
     }
 
     @GetMapping
     public ResponseEntity<Page<ItemDTO>> getAllItems(Pageable pageable,
          @Parameter(hidden = true) @RequestHeader("X-User-Id") String userId,
         @RequestParam(required = false) String categoryId) {
-        try {
+   
             log.debug("User: " + userId + " requested to get all items");
             return ResponseEntity.ok(itemService.getAllItems(categoryId, pageable));
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to retrieve items: " + e.getMessage(), e);
-        }
+    
     }
 
     @GetMapping("/{id}/expiry")
     public ResponseEntity<Boolean> checkExpiry(@PathVariable String id) {
-        try {
+   
             return ResponseEntity.ok(itemService.checkIfExpiryDatePassed(id));
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to check expiry: " + e.getMessage(), e);
-        }
+     
     }
 
     @PostMapping
@@ -79,14 +73,12 @@ public class ItemController {
     public ResponseEntity<ApiResponse<String>> createItem(
             @RequestBody CreateItemRequestType request,
             @Parameter(hidden = true) @RequestHeader("X-User-Id") String userId) {
-        try {
+     
             Item response = itemService.createItem(request, userId);
             return new ResponseEntity<ApiResponse<String>>(
                     new ApiResponse<String>(true, "Item created", response.getId().toString()),
                     HttpStatus.CREATED);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to create item: " + e.getMessage(), e);
-        }
+      
     }
 
 
@@ -98,7 +90,7 @@ public class ItemController {
     public ResponseEntity<ApiResponse<List<URL>>> addPicturesToItem(
             @RequestBody AddPicturesToItemRequest request,
             @Parameter(hidden = true) @RequestHeader("X-User-Id") String userId) {
-        try {
+  
 
             Boolean hasPicturesBeenAdded = itemService.savePictureIdsForItem(request.getItemId(), userId,
                     request.getPictureIds());
@@ -118,19 +110,15 @@ public class ItemController {
 
             return ResponseEntity.ok().body(new ApiResponse<List<URL>>(true, "pictures have been added", pictureUrls));
 
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to create item: " + e.getMessage(), e);
-        }
+    
     }
     @GetMapping("/search")
     public ResponseEntity<Page<ItemDTO>> searchItems(
             @RequestParam String keyword,
             Pageable pageable) {
-        try {
+  
             return ResponseEntity.ok(itemService.searchItem(keyword, pageable));
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to search items: " + e.getMessage(), e);
-        }
+      
     }
 
 
@@ -139,14 +127,12 @@ public class ItemController {
     public ResponseEntity<List<SimplifiedItemDTO>> getItemDetails(
             @RequestBody List<String> itemIds
     ) {
-     try {
+ 
         List<SimplifiedItemDTO> items =
                 itemService.getItemDetailsGivenIds(itemIds);
 
         return ResponseEntity.ok(items);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to search items: " + e.getMessage(), e);
-        }
+      
     }
 
 

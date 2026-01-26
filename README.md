@@ -258,11 +258,6 @@ kubectl get pods -w
 kubectl exec -it -n <namespace> <pod> -- bash
 ```
 
-#### Internal Routing Test
-```bash
-# Test internal service connectivity
-kubectl exec -it <pod-name> -- curl -v http://registry-service:8761/eureka
-```
 
 #### Port Forwarding
 ```bash

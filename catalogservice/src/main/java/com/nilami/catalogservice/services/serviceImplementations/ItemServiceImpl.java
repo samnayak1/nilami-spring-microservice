@@ -19,6 +19,7 @@ import com.nilami.catalogservice.dto.ApiResponse;
 import com.nilami.catalogservice.dto.GetHighestBidsRequest;
 import com.nilami.catalogservice.dto.ItemDTO;
 import com.nilami.catalogservice.dto.SimplifiedItemDTO;
+import com.nilami.catalogservice.exceptions.ForbiddenException;
 import com.nilami.catalogservice.exceptions.ItemNotFoundException;
 import com.nilami.catalogservice.models.Category;
 import com.nilami.catalogservice.models.Item;
@@ -28,7 +29,6 @@ import com.nilami.catalogservice.services.externalClients.BidClient;
 import com.nilami.catalogservice.services.serviceAbstractions.FileUploadService;
 import com.nilami.catalogservice.services.serviceAbstractions.ItemService;
 
-import jakarta.ws.rs.ForbiddenException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 

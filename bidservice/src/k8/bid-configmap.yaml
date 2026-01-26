@@ -7,7 +7,7 @@ metadata:
 data:
   POSTGRES_HOST: bid-db-rw
 
-  EUREKA_HOST: http://registry-service:8761
+
 
   # add ,kafka-1.kafka-headless.kafka.svc.cluster.local:9092,kafka-2.kafka-headless.kafka.svc.cluster.local:9092 for more replicas
 
@@ -20,3 +20,6 @@ data:
   # headless service allows brokers to advertise their unique, predictable FQDN and that is why we use the headless service
 
   GATEWAY_URL: "http://app.local"
+
+  AUTH_SERVICE_HOST: http://auth-service:8081
+  CATALOG_SERVICE_HOST: http://catalog-server-service:8085

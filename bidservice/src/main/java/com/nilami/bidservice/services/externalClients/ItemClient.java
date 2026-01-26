@@ -15,7 +15,10 @@ import com.nilami.bidservice.dto.ItemDTO;
 import com.nilami.bidservice.dto.SimplifiedItemDTO;
 
 
-@FeignClient(name = "CATALOG-SERVICE", configuration = FeignHeaderForwardingConfig.class)
+@FeignClient(
+    name = "catalog-server-service",
+    url="${CATALOG_SERVICE_HOST}",
+    configuration = FeignHeaderForwardingConfig.class)
 public interface ItemClient {
 
     @GetMapping("/api/v1/items/{id}")

@@ -55,13 +55,10 @@ public class BidController {
     public ResponseEntity<ApiResponse<List<Bid>>> getAllBidsOfItem(
             @PathVariable String itemId) {
 
-        try {
+    
             List<Bid> bids = bidService.getBidsOfItems(itemId);
             return ResponseEntity.ok(new ApiResponse<>(true, "Bids fetched successfully", bids));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse<>(false, "Error fetching bids: " + e.getMessage(), null));
-        }
+      
     }
 
     @PostMapping("/create")
@@ -84,16 +81,13 @@ public class BidController {
     public ResponseEntity<ApiResponse<List<GetBidsOfUserWithItemDetails>>> getAllBidsOfUser(
             @Parameter(hidden = true) @RequestHeader("X-User-Id") String userId) {
 
-        try {
+
 
             List<GetBidsOfUserWithItemDetails> bids = bidService.getBidsOfUserAlongWithHighestBidForItem(userId);
 
             return ResponseEntity.ok(new ApiResponse<>(true, "Bids fstched successfully", bids));
 
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse<>(false, "Error fetching bids: " + e.getMessage(), null));
-        }
+      
     }
 
     @PostMapping("/idempotent")
@@ -101,7 +95,7 @@ public class BidController {
             @RequestBody GetIdempotentKeyRequest request,
             @Parameter(hidden = true) @RequestHeader("X-User-Id") String userId) {
 
-        try {
+   
 
             GetIdempotentKeyResponse idempotentKeyResponse = bidService.getIdempotentKey(
                     request.getItemId(),
@@ -113,12 +107,7 @@ public class BidController {
                     "Idempotent successfully",
                     idempotentKeyResponse));
 
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse<GetIdempotentKeyResponse>(
-                            false, "Error fetching bids: " + e.getMessage(),
-                            null));
-        }
+       
 
     }
 
@@ -129,17 +118,11 @@ public class BidController {
         
         log.debug("Received request to get highest bids for items: {}", request.getItemIds());
         
-        try {
+      
             Map<String, BigDecimal> highestBids = bidService.getItemsHighestBidGivenItemIds(request.getItemIds());
             
             return ResponseEntity.ok(new ApiResponse<Map<String,BigDecimal>>(true, "ItemId to highest Bid Price Map", highestBids));
-                    
-        } catch (Exception e) {
-            log.error("Error fetching highest bids for items: {}", request.getItemIds(), e);
-            
-              return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse<>(false, "Error fetching itemId to bid map: " + e.getMessage(), null));
-        }
+    
     }
 }
 

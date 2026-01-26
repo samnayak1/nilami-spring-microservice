@@ -5,7 +5,9 @@ metadata:
 data:
   POSTGRES_HOST: catalog-db-rw
 
-  EUREKA_HOST: http://registry-service:8761
 
   GATEWAY_URL: "http://app.local"
+
+  AUTH_SERVICE_HOST: http://auth-service:8081
+  BID_SERVICE_HOST: http://bid-server-service:8082
   

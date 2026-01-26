@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: websocket-service
-          image: samnayak1/websocket-server:1.0.6
+          image: samnayak1/websocket-server:1.0.7
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3001
@@ -30,12 +30,7 @@ spec:
                 configMapKeyRef:
                   name: websocket-service-config
                   key: KAFKA_BROKER
-            - name: EUREKA_HOST
-              valueFrom:
-                configMapKeyRef:
-                  name: websocket-service-config
-                  key: EUREKA_HOST
-              
+
 
             - name: KAFKA_SASL_MECHANISM
               valueFrom:

@@ -11,7 +11,9 @@ import com.nilami.catalogservice.configs.FeignHeaderForwardingConfig;
 import com.nilami.catalogservice.dto.ApiResponse;
 import com.nilami.catalogservice.dto.GetHighestBidsRequest;
 
-@FeignClient(name = "BID-SERVICE", configuration = FeignHeaderForwardingConfig.class)
+@FeignClient(name = "bid-server-service",
+url="${BID_SERVICE_HOST}",
+configuration = FeignHeaderForwardingConfig.class)
 public interface BidClient {
         @PostMapping("/api/v1/bids/highest-bids")
     ApiResponse<Map<String, BigDecimal>> getHighestBidsForItems(@RequestBody GetHighestBidsRequest request);

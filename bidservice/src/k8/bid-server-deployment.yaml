@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: bid-server
-          image: samnayak1/bidservice:1.0.23
+          image: samnayak1/bidservice:1.0.26
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8082
@@ -29,11 +29,19 @@ spec:
                 configMapKeyRef:
                   name: bid-service-config
                   key: POSTGRES_HOST
-            - name: EUREKA_HOST
+
+            
+            - name: AUTH_SERVICE_HOST
               valueFrom:
                 configMapKeyRef:
                   name: bid-service-config
-                  key: EUREKA_HOST
+                  key: AUTH_SERVICE_HOST
+
+            - name: CATALOG_SERVICE_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: bid-service-config
+                  key: CATALOG_SERVICE_HOST
 
             - name: GATEWAY_URL
               valueFrom:

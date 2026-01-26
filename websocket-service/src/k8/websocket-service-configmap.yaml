@@ -6,7 +6,7 @@ metadata:
     app: websocket-service-config
 data:
   KAFKA_BROKER: kafka-service.kafka.svc.cluster.local:9092
-  EUREKA_HOST: http://registry-service:8761
+
   APP_NAME: WEBSOCKET-SERVICE
   HOST_NAME: websocket-service
   KAFKA_SASL_MECHANISM: plain

@@ -16,7 +16,9 @@ import com.nilami.bidservice.dto.BalanceReservationResponse;
 import com.nilami.bidservice.dto.UserDTO;
 
 
-@FeignClient(name = "AUTH-SERVICE", configuration = FeignHeaderForwardingConfig.class, path = "/api/v1/internal/auth")
+@FeignClient(name = "auth-service",
+url = "${AUTH_SERVICE_HOST}",
+configuration = FeignHeaderForwardingConfig.class, path = "/api/v1/internal/auth")
 public interface UserClient {
 
     @GetMapping("/details")
