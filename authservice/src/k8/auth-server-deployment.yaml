@@ -20,6 +20,14 @@ spec:
           ports:
             - containerPort: 8081
 
+          resources:
+            limits:
+              memory: "768Mi"
+              cpu: "500m"
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+
           env:
             - name: SERVER_PORT
               value: "8081"
