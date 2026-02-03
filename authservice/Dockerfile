@@ -18,11 +18,5 @@ COPY --from=build /app/target/*.jar app.jar
 
 EXPOSE 8081
 
-ENTRYPOINT ["java", \
-    "-XX:MaxRAMPercentage=75.0", \
-    "-XX:+UseSerialGC", \
-    "-XX:MaxMetaspaceSize=128m", \
-    "-XX:+TieredCompilation", \
-    "-XX:TieredStopAtLevel=1", \
-    "-Dspring.jmx.enabled=false", \
-    "-jar", "app.jar"]
+
+ENTRYPOINT ["java", "-jar", "app.jar"]

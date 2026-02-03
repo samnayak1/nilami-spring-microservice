@@ -3,15 +3,10 @@ kind: ConfigMap
 metadata:
   name: auth-service-config
 data:
-  KEYCLOAK_POSTGRES_DB: nilami_keycloak
-  KEYCLOAK_POSTGRES_USER: samnayak1
+
   KC_HOSTNAME_STRICT: "false"
   
-  KEYCLOAK_CLIENT_ID: nilami-client
 
-  KEYCLOAK_REALM: nilami-microservices-security-realm
-
-  KEYCLOAK_URL: http://keycloak:8080
 
 
 
