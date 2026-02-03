@@ -4,7 +4,7 @@ import com.nilami.authservice.controllers.requestTypes.SignupRequest;
 
 public interface UserAuthSignupService {
 
-    void deleteUser(String keycloakUserId);
+    void deleteUser(String userId);
 
     String createUser(SignupRequest signupRequest);
     

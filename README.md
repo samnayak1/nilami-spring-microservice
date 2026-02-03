@@ -12,7 +12,8 @@ The architecture is built using:
 - **Database Migration:** Flyway
 - **Containerization:** Docker
 - **Orchestration:** Kubernetes 
-- **Security & Identity:** Keycloak
+- **Security & Identity:** AWS Cognito
+- **File Storage:** AWS s3
 - **Secret Management:** Hashicorp Vault
 
 ![Nilami Architechture](nilami.svg)
