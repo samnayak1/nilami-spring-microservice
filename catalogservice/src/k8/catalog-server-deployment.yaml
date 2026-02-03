@@ -20,6 +20,35 @@ spec:
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8085
+
+        readinessProbe:  #has the app started
+          httpGet:
+            path: /actuator/health/readiness  
+            port: 8085
+          initialDelaySeconds: 30  
+          periodSeconds: 10        
+          timeoutSeconds: 5    
+          successThreshold: 1      
+          failureThreshold: 3     
+         
+        livenessProbe:  #is the app running
+          httpGet:
+            path: /actuator/health/liveness   
+            port: 8085
+          initialDelaySeconds: 60 
+          periodSeconds: 15      
+          timeoutSeconds: 5      
+          failureThreshold: 3     
+          
+         
+        startupProbe: #delays liveness checks until the pod succeeds
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8085
+          initialDelaySeconds: 0
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 30
         resources:
           limits:
             memory: "768Mi"
