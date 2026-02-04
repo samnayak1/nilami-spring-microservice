@@ -4,7 +4,7 @@ WORKDIR /app
 COPY pom.xml .
 RUN mvn dependency:resolve dependency:resolve-plugins -B
 COPY src ./src
-RUN mvn clean package
+RUN mvn clean package 
 
 # Runtime stage
 FROM eclipse-temurin:21-jre-alpine
@@ -17,5 +17,7 @@ USER spring:spring
 COPY --from=build /app/target/*.jar app.jar
 
 EXPOSE 8082
+
+
 
 ENTRYPOINT ["java", "-jar", "app.jar"]

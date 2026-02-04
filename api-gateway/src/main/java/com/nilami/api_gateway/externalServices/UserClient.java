@@ -9,7 +9,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import com.nilami.dto.TokenValidationRequest;
 import com.nilami.dto.TokenValidationResponse;
 
-@FeignClient(name = "auth-service",url = "http://auth-service:8081", path = "/api/v1/auth")
+@FeignClient(name = "auth-service",
+url = "${AUTH_SERVICE_HOST}",
+ path = "/api/v1/auth")
 public interface UserClient {
 
     @GetMapping("/validate-token")

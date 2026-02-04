@@ -12,7 +12,8 @@ The architecture is built using:
 - **Database Migration:** Flyway
 - **Containerization:** Docker
 - **Orchestration:** Kubernetes 
-- **Security & Identity:** Keycloak
+- **Security & Identity:** AWS Cognito
+- **File Storage:** AWS s3
 - **Secret Management:** Hashicorp Vault
 
 ![Nilami Architechture](nilami.svg)
@@ -201,6 +202,14 @@ kubectl exec -it catalog-db-1 -- psql -U postgres -c "\l"
 
 # Connect to database directly
 psql -h localhost -p 5432 -U <user> -d <database>
+
+#patch to set reclaim policy to retain instead of delete. Also do Vault and Kafka
+
+kubectl patch pv <pv id> -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}'
+
+
+
+
 ```
 
 ---

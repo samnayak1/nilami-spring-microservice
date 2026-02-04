@@ -1,6 +1,6 @@
 package com.nilami.authservice.models;
 
-import java.time.Instant;
+
 import java.util.List;
 
 import lombok.AllArgsConstructor;
@@ -19,5 +19,5 @@ public class UserInfo {
     private String username;
     private String email;
     private List<String> roles;
-    private Instant tokenExpiry;
+ 
 }

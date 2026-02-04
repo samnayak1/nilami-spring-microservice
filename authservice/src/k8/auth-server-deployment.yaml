@@ -15,29 +15,52 @@ spec:
     spec:
       containers:
         - name: auth-server
-          image: samnayak1/auth-server:1.0.16
+          image: samnayak1/auth-server:1.0.26
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8081
 
+          resources:
+            limits:
+              memory: "768Mi"
+              cpu: "500m"
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+
+          readinessProbe:  #has the app started
+            httpGet:
+              path: /actuator/health/readiness  
+              port: 8081
+            initialDelaySeconds: 30  
+            periodSeconds: 10        
+            timeoutSeconds: 5    
+            successThreshold: 1      
+            failureThreshold: 3     
+         
+          livenessProbe:  #is the app running
+            httpGet:
+              path: /actuator/health/liveness   
+              port: 8081
+            initialDelaySeconds: 60 
+            periodSeconds: 15      
+            timeoutSeconds: 5      
+            failureThreshold: 3     
+          
+         
+          startupProbe: #delays liveness checks until the pod succeeds
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8081
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 30
+
           env:
             - name: SERVER_PORT
               value: "8081"
-            - name: KEYCLOAK_CLIENT_ID
-              valueFrom:
-                configMapKeyRef:
-                  name: auth-service-config
-                  key: KEYCLOAK_CLIENT_ID
-            - name: KEYCLOAK_REALM
-              valueFrom:
-                configMapKeyRef:
-                  name: auth-service-config
-                  key: KEYCLOAK_REALM
-            - name: KEYCLOAK_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: auth-service-config
-                  key: KEYCLOAK_URL
+       
 
             - name: AUTH_SERVER_DB
               valueFrom:
@@ -74,21 +97,6 @@ spec:
 
               
 
-            - name: KEYCLOAK_CLIENT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: auth-service-secrets
-                  key: KEYCLOAK_CLIENT_SECRET
-            - name: KEYCLOAK_ADMIN
-              valueFrom:
-                secretKeyRef:
-                  name: auth-service-secrets
-                  key: KEYCLOAK_ADMIN
-            - name: KEYCLOAK_ADMIN_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: auth-service-secrets
-                  key: KEYCLOAK_ADMIN_PASSWORD
 
             - name: AUTH_SERVER_DB_PASSWORD
               valueFrom:
@@ -100,5 +108,52 @@ spec:
                 secretKeyRef:
                   name: auth-service-secrets
                   key: AUTH_SERVER_DB_USER
+
+            - name: JWT_ISSUER_URI
+              valueFrom:
+                secretKeyRef:
+                  name: auth-service-secrets
+                  key: JWT_ISSUER_URI
+
+            - name: AWS_REGION
+              valueFrom:
+                secretKeyRef:
+                  name: auth-service-secrets
+                  key: AWS_REGION
+
+
+            - name: AWS_COGNITO_USER_POOL_ID
+              valueFrom:
+                secretKeyRef:
+                  name: auth-service-secrets
+                  key: AWS_COGNITO_USER_POOL_ID
+
+
+            - name: AWS_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: auth-service-secrets
+                  key: AWS_CLIENT_ID
+
+
+            - name: AWS_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: auth-service-secrets
+                  key: AWS_CLIENT_SECRET
+
+            - name: AWS_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: catalog-secret
+                  key: AWS_ACCESS_KEY
+
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: catalog-secret
+                  key: AWS_SECRET_ACCESS_KEY
+
+            
 
                 

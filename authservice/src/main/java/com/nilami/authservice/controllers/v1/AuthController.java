@@ -1,38 +1,46 @@
 package com.nilami.authservice.controllers.v1;
 
 import lombok.extern.slf4j.Slf4j;
+import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminInitiateAuthRequest;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminInitiateAuthResponse;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminListGroupsForUserRequest;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminListGroupsForUserResponse;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AttributeType;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AuthFlowType;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AuthenticationResultType;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.CognitoIdentityProviderException;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.GetUserRequest;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.GetUserResponse;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.GroupType;
 
-import java.time.Instant;
-import java.util.ArrayList;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+
 import org.springframework.http.HttpStatus;
 
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestTemplate;
-
-import com.nilami.authservice.configs.KeycloakClientProperties;
+import com.nilami.authservice.configs.CognitoProperties;
 import com.nilami.authservice.controllers.requestTypes.LoginRequest;
 import com.nilami.authservice.controllers.requestTypes.RefreshTokenRequest;
 import com.nilami.authservice.controllers.requestTypes.SignupRequest;
 import com.nilami.authservice.controllers.requestTypes.TokenValidationRequest;
 import com.nilami.authservice.dto.ApiResponse;
+import com.nilami.authservice.dto.LoginResponse;
+import com.nilami.authservice.dto.RefreshTokenResponse;
 import com.nilami.authservice.dto.TokenValidationResponse;
-import com.nilami.authservice.exceptions.UserAlreadyExistsException;
 import com.nilami.authservice.models.UserInfo;
 import com.nilami.authservice.models.UserModel;
 import com.nilami.authservice.services.UserAuthSignupService;
@@ -46,254 +54,175 @@ import jakarta.validation.Valid;
 public class AuthController {
 
     private final UserSignupService userSignupService;
-
-    @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
-    private String keycloakRealm;
-
-    private final RestTemplate restTemplate = new RestTemplate();
-    private final KeycloakClientProperties clientProps;
-    private UserAuthSignupService userAuthSignupService;
+    private final UserAuthSignupService userAuthSignupService;
+    private final CognitoIdentityProviderClient cognitoClient;
+    private final CognitoProperties cognitoProps;
 
     public AuthController(UserSignupService userSignupService,
-            KeycloakClientProperties clientProps,
-            UserAuthSignupService userAuthSignupService) {
+            UserAuthSignupService userAuthSignupService,
+            CognitoIdentityProviderClient cognitoClient,
+            CognitoProperties cognitoProps) {
         this.userSignupService = userSignupService;
         this.userAuthSignupService = userAuthSignupService;
-        this.clientProps = clientProps;
+        this.cognitoClient = cognitoClient;
+        this.cognitoProps = cognitoProps;
     }
 
-    @GetMapping("/test")
-    public ResponseEntity<String> testController() {
-        return ResponseEntity.ok("Hello");
-    }
-
-    @SuppressWarnings("rawtypes")
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
-        System.out.println("Login started");
         try {
-            String tokenUrl = keycloakRealm + "/protocol/openid-connect/token";
+            log.debug("Login started for user" + loginRequest.getEmail());
+            Map<String, String> authParameters = new HashMap<>();
+            authParameters.put("USERNAME", loginRequest.getEmail());
+            authParameters.put("PASSWORD", loginRequest.getPassword());
 
-            MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
-            form.add("client_id", clientProps.getClientId());
-            form.add("client_secret", clientProps.getClientSecret());
-            form.add("grant_type", "password");
-            form.add("username", loginRequest.getEmail());
-            form.add("password", loginRequest.getPassword());
+            authParameters.put("SECRET_HASH", calculateSecretHash(loginRequest.getEmail()));
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+            AdminInitiateAuthRequest authRequest = AdminInitiateAuthRequest.builder()
+                    .authFlow(AuthFlowType.ADMIN_USER_PASSWORD_AUTH)
+                    .userPoolId(cognitoProps.getUserPoolId())
+                    .clientId(cognitoProps.getClientId())
+                    .authParameters(authParameters)
+                    .build();
 
-            HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(form, headers);
+            AdminInitiateAuthResponse response = cognitoClient.adminInitiateAuth(authRequest);
 
-            ResponseEntity<Map> response = restTemplate.postForEntity(tokenUrl, request, Map.class);
-    
-            return ResponseEntity.ok(response.getBody());
+            AuthenticationResultType authResult = response.authenticationResult();
+            LoginResponse loginResponse = new LoginResponse(
+                    authResult.accessToken(),
+                    authResult.idToken(),
+                    authResult.refreshToken(),
+                    authResult.tokenType(),
+                    authResult.expiresIn());
+            log.debug("auth response for user" + loginRequest.getEmail() + loginResponse);
+            return ResponseEntity.ok(loginResponse);
 
-        } catch (HttpClientErrorException e) {
-            return ResponseEntity
-                    .status(e.getStatusCode())
-                    .body(Map.of("error", "Keycloak rejected login", "details", e.getResponseBodyAsString()));
-        } catch (Exception e) {
-
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Unexpected error during login", "details", e.getMessage()));
+        } catch (CognitoIdentityProviderException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Cognito rejected login", "details", e.awsErrorDetails().errorMessage()));
         }
     }
 
     @PostMapping("/signup")
     public ResponseEntity<ApiResponse<UserModel>> signup(@Valid @RequestBody SignupRequest request) {
-        log.info("Received signup request for email: {}", request.getEmail());
-        log.debug("Signup request details - Name: {}, Age: {}, Gender: {}",
-                request.getName(), request.getAge(), request.getGender());
-        String keycloakUserId = null;
+        String cognitoUserId = null;
         try {
-            //check if duplicate emails exists
+            // in congnitop
+            cognitoUserId = userAuthSignupService.createUser(request);
+            request.setId(cognitoUserId);
 
-
-            // Create user in Keycloak
-            log.info("Attempting to create user in Keycloak for email: {}", request.getEmail());
-            keycloakUserId = userAuthSignupService.createUser(request);
-            log.info("Successfully created user in Keycloak with ID: {} for email: {}",
-                    keycloakUserId, request.getEmail());
-
-            request.setId(keycloakUserId);
-
-            // Create user in Auth Service
-            log.info("Attempting to create user in Auth Service for Keycloak ID: {}", keycloakUserId);
+            // local database
             UserModel authResponse = userSignupService.signupUser(request);
-            log.info("Successfully created user in Auth Service for Keycloak ID: {}", keycloakUserId,
-                    authResponse.getId());
 
-            log.info("User signup completed successfully for email: {} with Keycloak ID: {}",
-                    request.getEmail(), keycloakUserId);
+            return ResponseEntity.ok(new ApiResponse<>(true, "User registered successfully", authResponse));
 
-            log.info("User registered successfully with ID: {} and email: {}",
-                    authResponse.getId(), authResponse.getEmail());
-
-            ApiResponse<UserModel> response = new ApiResponse<>(
-                    true,
-                    "User registered successfully",
-                    authResponse);
-            return ResponseEntity.ok(response);
-
-        } catch (IllegalArgumentException ex) {
-            log.warn("Invalid signup request for email: {}. Reason: {}",
-                    request.getEmail(), ex.getMessage());
-
-            ApiResponse<UserModel> response = new ApiResponse<>(
-                    false,
-                    "Invalid request: " + ex.getMessage(),
-                    null);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-
-        } catch (UserAlreadyExistsException ex) {
-            if (keycloakUserId != null) {
-                try {
-                    userAuthSignupService.deleteUser(keycloakUserId);
-                    log.info("Rolled back Keycloak user creation for userId: {}", keycloakUserId);
-                } catch (Exception rollbackEx) {
-                    log.error("Failed to rollback Keycloak user creation for userId: {}", keycloakUserId, rollbackEx);
-                }
-            }
-            ApiResponse<UserModel> response = new ApiResponse<>(
-                    false,
-                    "User Already Exists " + ex.getMessage(),
-                    null);
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
         } catch (Exception ex) {
-            log.error("Unexpected error during signup for email: {}. Error: {}",
-                    request.getEmail(), ex.getMessage(), ex);
-
-            log.error("Unexpected error during signup for email: {}. Keycloak ID: {}. Error: {}",
-                    request.getEmail(), keycloakUserId, ex.getMessage(), ex);
-
-            return handleRegistrationFailure(keycloakUserId, ex);
-        }
-    }
-
-    @SuppressWarnings("rawtypes")
-    @PostMapping("/refresh")
-    public ResponseEntity<?> refreshToken(@RequestBody RefreshTokenRequest requestBody) {
-        try {
-            String refreshToken = requestBody.getRefreshToken();
-            if (refreshToken == null || refreshToken.isBlank()) {
-                return ResponseEntity.badRequest()
-                        .body(new ApiResponse<String>(false, "Refresh token not present", refreshToken));
-            }
-
-            String tokenUrl = keycloakRealm + "/protocol/openid-connect/token";
-
-            MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
-            form.add("client_id", clientProps.getClientId());
-            form.add("client_secret", clientProps.getClientSecret());
-            form.add("grant_type", "refresh_token");
-            form.add("refresh_token", refreshToken);
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-            HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(form, headers);
-
-            ResponseEntity<Map> response = restTemplate.postForEntity(tokenUrl, request, Map.class);
-            return ResponseEntity.ok(response.getBody());
-
-        } catch (HttpClientErrorException e) {
-            return ResponseEntity
-                    .status(e.getStatusCode())
-                    .body(Map.of("error", "Keycloak rejected refresh", "details", e.getResponseBodyAsString()));
-        } catch (Exception e) {
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Unexpected error during refresh", "details", e.getMessage()));
-        }
-    }
-
-    @SuppressWarnings({ "rawtypes", "unchecked", "null" })
-    @PostMapping("/validate-token")
-    public ResponseEntity<TokenValidationResponse> validateToken(
-            @RequestBody TokenValidationRequest request) {
-
-        try {
-            String token = request.getToken();
-
-            if (token == null || token.isBlank()) {
-                return ResponseEntity.badRequest()
-                        .body(new TokenValidationResponse(false, "Token is required", null));
-            }
-
-            String introspectionUrl = keycloakRealm + "/protocol/openid-connect/token/introspect";
-
-            MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
-            form.add("client_id", clientProps.getClientId());
-            form.add("client_secret", clientProps.getClientSecret());
-            form.add("token", token);
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-            HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(form, headers);
-
-            ResponseEntity<Map> response = restTemplate.postForEntity(
-                    introspectionUrl,
-                    requestEntity,
-                    Map.class);
-
-            Map<String, Object> introspectionResult = response.getBody();
-
-            // Check if token is active
-            Boolean active = (Boolean) introspectionResult.get("active");
-
-            if (Boolean.TRUE.equals(active)) {
-                // Extract user information
-                UserInfo userInfo = new UserInfo();
-                userInfo.setUserId((String) introspectionResult.get("sub"));
-                userInfo.setUsername((String) introspectionResult.get("preferred_username"));
-                userInfo.setEmail((String) introspectionResult.get("email"));
-
-                // Extract roles
-                Map<String, Object> realmAccess = (Map<String, Object>) introspectionResult.get("realm_access");
-                if (realmAccess != null) {
-                    List<String> roles = (List<String>) realmAccess.get("roles");
-                    userInfo.setRoles(roles != null ? roles : new ArrayList<>());
-                }
-
-                // Extract token expiry
-                Long exp = ((Number) introspectionResult.get("exp")).longValue();
-                userInfo.setTokenExpiry(Instant.ofEpochSecond(exp));
-
-                return ResponseEntity.ok(
-                        new TokenValidationResponse(true, "Token is valid", userInfo));
-            } else {
-                return ResponseEntity.ok(
-                        new TokenValidationResponse(false, "Token is not active", null));
-            }
-
-        } catch (HttpClientErrorException e) {
-            log.error("Keycloak introspection failed: {}", e.getResponseBodyAsString());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new TokenValidationResponse(false, "Token validation failed", null));
-
-        } catch (Exception e) {
-            log.error("Unexpected error during token validation", e);
+            log.error("Signup failed for {}: {}", request.getEmail(), ex.getMessage());
+            if (cognitoUserId != null)
+                userAuthSignupService.deleteUser(cognitoUserId);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new TokenValidationResponse(false, "Internal error", null));
+                    .body(new ApiResponse<>(false, "Registration failed: " + ex.getMessage(), null));
         }
     }
 
-    private ResponseEntity<ApiResponse<UserModel>> handleRegistrationFailure(String keycloakUserId, Exception ex) {
-        if (keycloakUserId != null) {
-            try {
-                userAuthSignupService.deleteUser(keycloakUserId);
-                log.info("Rolled back Keycloak user creation for userId: {}", keycloakUserId);
-            } catch (Exception rollbackEx) {
-                log.error("Failed to rollback Keycloak user creation for userId: {}", keycloakUserId, rollbackEx);
-            }
-        }
+ @PostMapping("/refresh")
+public ResponseEntity<?> refreshToken(@RequestBody RefreshTokenRequest requestBody) {
+    try {
+        Map<String, String> authParams = new HashMap<>();
+        authParams.put("REFRESH_TOKEN", requestBody.getRefreshToken());
+        authParams.put("SECRET_HASH", calculateSecretHash(requestBody.getUserId()));
+        
+        AdminInitiateAuthRequest refreshRequest = AdminInitiateAuthRequest.builder()
+                .authFlow(AuthFlowType.REFRESH_TOKEN_AUTH)
+                .userPoolId(cognitoProps.getUserPoolId())
+                .clientId(cognitoProps.getClientId())
+                .authParameters(authParams)
+                .build();
+
+        AdminInitiateAuthResponse response = cognitoClient.adminInitiateAuth(refreshRequest);
+        AuthenticationResultType authResult = response.authenticationResult();
+        
+       
+        RefreshTokenResponse refreshResponse = new RefreshTokenResponse(
+            authResult.accessToken(),
+            authResult.idToken(),
+            authResult.tokenType(),
+            authResult.expiresIn()
+        );
+        
+        return ResponseEntity.ok(refreshResponse);
+
+    } catch (CognitoIdentityProviderException e) {
+        log.error("Cognito refresh token failed", e);
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of(
+                    "error", "aws response failed",
+                    "message", e.awsErrorDetails().errorMessage()
+                ));
+    } catch (Exception e) {
+        log.error("Unexpected error during token refresh", e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ApiResponse<UserModel>(false, "User registration failed: " + ex.getMessage() + ex.toString(),
-                        null));
+                .body(Map.of(
+                    "error", "token failed",
+                    "message", e.getMessage()
+                ));
     }
+}
+@PostMapping("/validate-token")
+public ResponseEntity<?> validateToken(@RequestBody TokenValidationRequest request) {
+    try {
+        GetUserRequest getUserRequest = GetUserRequest.builder()
+                .accessToken(request.getToken())
+                .build();
 
+        GetUserResponse response = cognitoClient.getUser(getUserRequest);
+
+
+        AdminListGroupsForUserRequest groupsRequest = AdminListGroupsForUserRequest.builder()
+                .username(response.username())
+                .userPoolId(cognitoProps.getUserPoolId())
+                .build();
+
+        AdminListGroupsForUserResponse groupsResponse = cognitoClient.adminListGroupsForUser(groupsRequest);
+
+        List<String> roles = groupsResponse.groups().stream()
+                .map(GroupType::groupName)
+                .collect(Collectors.toList());
+
+ 
+        UserInfo userInfo = new UserInfo();
+        userInfo.setUserId(response.username());
+        userInfo.setUsername(response.username());
+        userInfo.setEmail(response.userAttributes().stream()
+                .filter(a -> a.name().equals("email"))
+                .findFirst()
+                .map(AttributeType::value)
+                .orElse(null));
+        userInfo.setRoles(roles);
+
+
+        return ResponseEntity.ok(new TokenValidationResponse(true, "Token is valid", userInfo));
+
+    } catch (Exception e) {
+        return ResponseEntity.ok(new TokenValidationResponse(false, "Token is invalid", null));
+    }
+}
+
+    private String calculateSecretHash(String userName) {
+        String clientId = cognitoProps.getClientId();
+        String clientSecret = cognitoProps.getClientSecret();
+
+        SecretKeySpec signingKey = new SecretKeySpec(
+                clientSecret.getBytes(StandardCharsets.UTF_8),
+                "HmacSHA256");
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(signingKey);
+            mac.update(userName.getBytes(StandardCharsets.UTF_8));
+            byte[] rawHmac = mac.doFinal(clientId.getBytes(StandardCharsets.UTF_8));
+            return Base64.getEncoder().encodeToString(rawHmac);
+        } catch (Exception e) {
+            throw new RuntimeException("Error calculating secret hash", e);
+        }
+    }
 }
