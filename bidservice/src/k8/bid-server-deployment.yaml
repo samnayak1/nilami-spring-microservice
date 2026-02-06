@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: bid-server
-          image: samnayak1/bidservice:1.0.27
+          image: samnayak1/bidservice:1.0.29
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8082

@@ -1,5 +1,4 @@
 {"properties": [
-
   {
     "name": "auth.service.url",
     "type": "java.lang.String",
@@ -14,5 +13,10 @@
     "name": "bid.service.url",
     "type": "java.lang.String",
     "description": "A description for 'bid.service.url'"
+  },
+  {
+    "name": "app.cors.allowed-origins",
+    "type": "java.lang.String",
+    "description": "A description for 'app.cors.allowed-origins'"
   }
 ]}

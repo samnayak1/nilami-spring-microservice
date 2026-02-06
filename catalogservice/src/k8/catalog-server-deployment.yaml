@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: catalog-server-container
-        image: samnayak1/catalogbackend:1.0.12
+        image: samnayak1/catalogbackend:1.0.13
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8085
@@ -25,20 +25,20 @@ spec:
           httpGet:
             path: /actuator/health/readiness  
             port: 8085
-          initialDelaySeconds: 30  
-          periodSeconds: 10        
-          timeoutSeconds: 5    
-          successThreshold: 1      
-          failureThreshold: 3     
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
          
         livenessProbe:  #is the app running
           httpGet:
             path: /actuator/health/liveness   
             port: 8085
-          initialDelaySeconds: 60 
-          periodSeconds: 15      
-          timeoutSeconds: 5      
-          failureThreshold: 3     
+          initialDelaySeconds: 60
+          periodSeconds: 15
+          timeoutSeconds: 5
+          failureThreshold: 3
           
          
         startupProbe: #delays liveness checks until the pod succeeds
