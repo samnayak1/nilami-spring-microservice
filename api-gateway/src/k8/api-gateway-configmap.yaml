@@ -8,4 +8,4 @@ data:
   CATALOG_SERVICE_HOST: http://catalog-server-service:8085
   BID_SERVICE_HOST: http://bid-server-service:8082
 
-  ALLOWED_CLIENT_HOSTS: http://localhost:5173
+  ALLOWED_CLIENT_HOSTS: http://localhost:5173,http://127.0.0.1:5173

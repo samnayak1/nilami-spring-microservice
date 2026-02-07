@@ -41,9 +41,11 @@ import com.nilami.authservice.dto.ApiResponse;
 import com.nilami.authservice.dto.LoginResponse;
 import com.nilami.authservice.dto.RefreshTokenResponse;
 import com.nilami.authservice.dto.TokenValidationResponse;
+import com.nilami.authservice.dto.UserDTO;
 import com.nilami.authservice.models.UserInfo;
 import com.nilami.authservice.models.UserModel;
 import com.nilami.authservice.services.UserAuthSignupService;
+import com.nilami.authservice.services.UserService;
 import com.nilami.authservice.services.UserSignupService;
 
 import jakarta.validation.Valid;
@@ -57,15 +59,19 @@ public class AuthController {
     private final UserAuthSignupService userAuthSignupService;
     private final CognitoIdentityProviderClient cognitoClient;
     private final CognitoProperties cognitoProps;
+    private final UserService userService;
 
     public AuthController(UserSignupService userSignupService,
             UserAuthSignupService userAuthSignupService,
             CognitoIdentityProviderClient cognitoClient,
-            CognitoProperties cognitoProps) {
+            CognitoProperties cognitoProps,
+            UserService userService
+        ) {
         this.userSignupService = userSignupService;
         this.userAuthSignupService = userAuthSignupService;
         this.cognitoClient = cognitoClient;
         this.cognitoProps = cognitoProps;
+        this.userService = userService;
     }
 
     @PostMapping("/login")
@@ -189,16 +195,17 @@ public ResponseEntity<?> validateToken(@RequestBody TokenValidationRequest reque
                 .map(GroupType::groupName)
                 .collect(Collectors.toList());
 
- 
+        UserDTO user=  userService.getUserDetails(response.username());
         UserInfo userInfo = new UserInfo();
         userInfo.setUserId(response.username());
-        userInfo.setUsername(response.username());
+        userInfo.setUsername(user.getName());
         userInfo.setEmail(response.userAttributes().stream()
                 .filter(a -> a.name().equals("email"))
                 .findFirst()
                 .map(AttributeType::value)
                 .orElse(null));
         userInfo.setRoles(roles);
+   
 
 
         return ResponseEntity.ok(new TokenValidationResponse(true, "Token is valid", userInfo));
