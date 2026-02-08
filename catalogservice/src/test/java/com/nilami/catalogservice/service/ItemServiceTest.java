@@ -100,6 +100,14 @@ public class ItemServiceTest {
                 .thenReturn(URI.create("https://mock-s3.com/pic1.png").toURL());
         when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic2.jpg"))
                 .thenReturn(URI.create("https://mock-s3.com/pic2.jpg").toURL());
+                Map<String, BigDecimal> highestBidsMap = new HashMap<>();
+        highestBidsMap.put(item.getId().toString(), new BigDecimal("100.00"));
+        
+        ApiResponse<Map<String, BigDecimal>> mockResponse = 
+            new ApiResponse<>(true, "Success", highestBidsMap);
+        
+        when(bidClient.getHighestBidsForItems(any(GetHighestBidsRequest.class)))
+            .thenReturn(mockResponse);
 
         ItemDTO result = itemService.getItem(item.getId().toString());
 
@@ -131,10 +139,7 @@ public class ItemServiceTest {
         
         ApiResponse<Map<String, BigDecimal>> mockResponse = 
             new ApiResponse<>(true, "Success", highestBidsMap);
-        
 
-        
-        // Mock the client call
         when(bidClient.getHighestBidsForItems(any(GetHighestBidsRequest.class)))
             .thenReturn(mockResponse);
 

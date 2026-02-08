@@ -50,7 +50,15 @@ public class ItemServiceImpl implements ItemService {
         UUID itemIdInUUID = UUID.fromString(itemId);
         Item item = itemRepository.findById(itemIdInUUID)
                 .orElseThrow(() -> new RuntimeException("Item not found"));
-        return ItemDTO.toItemDTO(item, fileService);
+        List<UUID> itemIds = List.of(UUID.fromString(itemId));
+
+
+        Map<String, BigDecimal> highestBids = getHighestBids(itemIds);
+        BigDecimal highestBid = highestBids.getOrDefault(itemId, BigDecimal.ZERO);
+        ItemDTO itemDTO = ItemDTO.toItemDTO(item, fileService);
+        itemDTO.setHighestBidPrice(highestBid);
+        
+        return itemDTO;
     }
  
     @Override
