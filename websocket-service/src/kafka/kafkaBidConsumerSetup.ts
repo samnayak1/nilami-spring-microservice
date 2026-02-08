@@ -8,7 +8,7 @@ export const kafka = new Kafka({
 
   ssl: false,
 
-  logLevel: logLevel.DEBUG,
+  logLevel: logLevel.INFO,
 
    retry: {
     initialRetryTime: 300,  
@@ -48,7 +48,7 @@ export const startBidConsumer = async (onBid: (event: BidEvent) => void) => {
 
   consumer.run({
     eachMessage: async ({ partition, topic, message }) => {
-
+      console.log(`Received message ${message} on partition ${partition} of topic ${topic}`);
       const parsed = JSON.parse(message.value!.toString());
       const event = BidEventSchema.parse(parsed);
       onBid(event);

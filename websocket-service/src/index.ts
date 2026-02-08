@@ -14,9 +14,8 @@ app.get("/health", (req, res) => res.send("OK"));
 
 startBidConsumer((event) => {
     try {
-        console.debug("Consumer ran!");
-        console.debug(JSON.stringify(event));
-
+         
+        console.log("Processing bid event:", JSON.stringify(event));
         socketManager.toRoom(`${SocketRooms.ItemBids}-${event.itemId}`, EventEnums.BidPlaced, event);
 
     } catch (error) {
