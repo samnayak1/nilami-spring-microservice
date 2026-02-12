@@ -9,23 +9,33 @@
     <div id="status">Connecting...</div>
     
     <script>
-        const socket = io('http://app.local', {
-            path: '/ws'
-        });
-        
-        socket.on('connect', () => {
-            document.getElementById('status').innerHTML = '✅ Connected: ' + socket.id;
-            console.log('Connected!', socket.id);
-        });
-        
-        socket.on('connect_error', (err) => {
-            document.getElementById('status').innerHTML = '❌ Error: ' + err.message;
-            console.error('Connection error:', err);
-        });
-        
-        socket.on('disconnect', () => {
-            document.getElementById('status').innerHTML = '❌ Disconnected';
-        });
-    </script>
+    const socket = io('http://app.local', {
+        path: '/ws'
+    });
+
+    const ITEM_ID = 'e8660a91-ada0-4797-9b90-82da4f14c42e';
+
+    socket.on('connect', () => {
+        document.getElementById('status').innerHTML = '✅ Connected: ' + socket.id;
+        console.log('Connected!', socket.id);
+
+
+        socket.emit('JOIN_ITEM_ROOM', { itemId: ITEM_ID });
+        console.log('Sent request to join room:', ITEM_ID);
+    });
+
+    socket.on('BID_PLACED', (data) => {
+        console.log('New bid received for item:', data);
+    
+    });
+
+    socket.on('connect_error', (err) => {
+        document.getElementById('status').innerHTML = '❌ Error: ' + err.message;
+    });
+
+    socket.on('disconnect', () => {
+        document.getElementById('status').innerHTML = '❌ Disconnected';
+    });
+</script>
 </body>
 </html>

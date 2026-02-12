@@ -46,12 +46,20 @@ export const startBidConsumer = async (onBid: (event: BidEvent) => void) => {
     fromBeginning: false
   });
 
-  consumer.run({
-    eachMessage: async ({ partition, topic, message }) => {
-      console.log(`Received message ${message} on partition ${partition} of topic ${topic}`);
-      const parsed = JSON.parse(message.value!.toString());
+consumer.run({
+  eachMessage: async ({ partition, topic, message }) => {
+    try {
+      const value = message.value?.toString();
+      if (!value) return;
+
+      const parsed = JSON.parse(value);
       const event = BidEventSchema.parse(parsed);
+      
       onBid(event);
+    } catch (err) {
+
+      console.error(` Kafka Processing Error on partition ${partition}:`, err.message);
     }
-  });
+  }
+});
 }
