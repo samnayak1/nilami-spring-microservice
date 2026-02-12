@@ -205,6 +205,11 @@ public ResponseEntity<?> validateToken(@RequestBody TokenValidationRequest reque
                 .map(AttributeType::value)
                 .orElse(null));
         userInfo.setRoles(roles);
+        userInfo.setBalance(user.getBalance());
+        userInfo.setAddress(user.getAddress());
+        userInfo.setBio(user.getBio());
+        userInfo.setCreated(userInfo.getCreated());
+        
    
 
 

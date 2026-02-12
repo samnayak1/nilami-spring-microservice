@@ -1,6 +1,8 @@
 package com.nilami.authservice.models;
 
 
+import java.math.BigDecimal;
+import java.util.Date;
 import java.util.List;
 
 import lombok.AllArgsConstructor;
@@ -19,5 +21,10 @@ public class UserInfo {
     private String username;
     private String email;
     private List<String> roles;
+    private BigDecimal balance;
+    private String address;
+    private String bio;
+    private Date created;
+    
  
 }

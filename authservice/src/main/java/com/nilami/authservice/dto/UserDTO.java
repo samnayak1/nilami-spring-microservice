@@ -31,6 +31,8 @@ public class UserDTO {
 
     private BigDecimal balance;
 
+    private String address;
+
       
     public static UserDTO toUserDTO(UserModel user) {
            return UserDTO.builder()
@@ -39,6 +41,7 @@ public class UserDTO {
                 .profilePicture(user.getProfilePicture())
                 .email(user.getEmail())
                 .age(user.getAge())
+                .address(user.getAddress())
                 .role(user.getRole())
                 .balance(user.getBalance())
                 .bio(user.getBio())
