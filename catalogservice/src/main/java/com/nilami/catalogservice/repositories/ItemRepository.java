@@ -13,29 +13,27 @@ import com.nilami.catalogservice.models.Item;
 
 public interface ItemRepository extends JpaRepository<Item, UUID> {
 
-Page<Item> findByTitleStartingWithIgnoreCaseOrDescriptionStartingWithIgnoreCase(
-        String titlePrefix,
-        String descriptionPrefix,
-        Pageable pageable
-);
+        Page<Item> findByTitleStartingWithIgnoreCase(
+                        String titlePrefix,
+                        Pageable pageable
+                );
 
+        // Unset splits it up like VALUES (1), (2), (3), (4)). This is called a virtual
+        // table
+        @Query(value = """
+                        SELECT
+                        i.id,
+                        i.title,
+                        i.base_price as basePrice,
+                        i.brand,
+                        i.expiry_time as expiryTime,
+                        i.deleted
+                        FROM items i
+                        JOIN UNNEST(:ids) AS virtual_list(id)
+                        ON i.id = virtual_list.id
+                        """, nativeQuery = true)
+        List<SimplifiedItemDTO> findItemsByVirtualIdList(UUID[] ids);
 
-     //Unset splits it up like VALUES (1), (2), (3), (4)). This is called a virtual table
-    @Query(value = """
-            SELECT 
-            i.id,
-            i.title,
-            i.base_price as basePrice,
-            i.brand,
-            i.expiry_time as expiryTime,
-            i.deleted
-            FROM items i
-            JOIN UNNEST(:ids) AS virtual_list(id)
-            ON i.id = virtual_list.id
-            """, nativeQuery = true)
-    List<SimplifiedItemDTO> findItemsByVirtualIdList(UUID[] ids);
-
-
-    Page<Item> findByCategoryId(String categoryId, Pageable pageable);
+        Page<Item> findByCategoryId(String categoryId, Pageable pageable);
 
 }
