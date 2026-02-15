@@ -154,6 +154,18 @@ spec:
                   name: catalog-secret
                   key: AWS_SECRET_ACCESS_KEY
 
+            - name: STRIPE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: auth-service-secrets
+                  key: STRIPE_SECRET_KEY
+
+            - name: STRIPE_PUBLISHABLE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: auth-service-secrets
+                  key: STRIPE_PUBLISHABLE_KEY
+
             
 
                 
