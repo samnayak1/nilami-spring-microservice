@@ -34,6 +34,6 @@ public interface ItemRepository extends JpaRepository<Item, UUID> {
                         """, nativeQuery = true)
         List<SimplifiedItemDTO> findItemsByVirtualIdList(UUID[] ids);
 
-        Page<Item> findByCategoryId(String categoryId, Pageable pageable);
+        Page<Item> findByCategoryId(UUID categoryId, Pageable pageable);
 
 }

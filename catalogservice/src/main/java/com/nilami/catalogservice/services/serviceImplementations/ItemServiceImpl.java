@@ -63,12 +63,13 @@ public class ItemServiceImpl implements ItemService {
     }
  
     @Override
+    @Transactional(readOnly = true)
     public Page<ItemDTO> getAllItems(String categoryId,Pageable pageable) {
 
     Page<Item> itemsPage;
 
     if(categoryId!=null&& !categoryId.isEmpty()){
-          itemsPage = itemRepository.findByCategoryId(categoryId, pageable);
+          itemsPage = itemRepository.findByCategoryId(UUID.fromString(categoryId), pageable);
     } else{
 
            itemsPage=itemRepository.findAll(pageable);
