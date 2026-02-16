@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: auth-server
-          image: samnayak1/auth-server:1.0.29
+          image: samnayak1/auth-server:1.0.33
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8081
@@ -165,6 +165,13 @@ spec:
                 secretKeyRef:
                   name: auth-service-secrets
                   key: STRIPE_PUBLISHABLE_KEY
+
+            - name: STRIPE_WEBHOOK_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: auth-service-secrets
+                  key: STRIPE_WEBHOOK_SECRET
+                  
 
             
 

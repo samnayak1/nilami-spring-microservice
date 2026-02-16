@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.nilami.authservice.controllers.requestTypes.CreatePaymentIntentRequest;
 import com.nilami.authservice.dto.CreatePaymentGatewayResponse;
 import com.nilami.authservice.services.PaymentGatewayService;
+
 import com.stripe.exception.StripeException;
 
 
@@ -19,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @Slf4j
-@RequestMapping("/api/v1/payment")
+@RequestMapping("/api/v1/auth/payment")
 @RequiredArgsConstructor
 public class PaymentGatewayController {
 
@@ -38,4 +39,16 @@ public class PaymentGatewayController {
 
         return ResponseEntity.ok(response);
     }
+
+        @PostMapping("/webhook")
+    public ResponseEntity<String> handleWebhook(
+            @RequestBody String payload,
+            @RequestHeader("Stripe-Signature") String sigHeader) {
+        
+     Boolean success = paymentGatewayService.handleWebhook(payload, sigHeader);
+
+        return ResponseEntity.ok("Success"+success);
+    }
+
+
 }
