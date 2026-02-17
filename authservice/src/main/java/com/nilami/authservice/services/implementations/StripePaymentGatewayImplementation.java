@@ -47,11 +47,12 @@ public class StripePaymentGatewayImplementation implements PaymentGatewayService
                         PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
                                 .setEnabled(true)
                                 .build())
+                
                 .build();
 
         CreatePaymentGatewayResponse response = new CreatePaymentGatewayResponse();
         try {
-            com.stripe.model.PaymentIntent paymentIntent = com.stripe.model.PaymentIntent.create(params);
+            PaymentIntent paymentIntent = PaymentIntent.create(params);
             response.setClientSecret(paymentIntent.getClientSecret());
             response.setPaymentIntentId(paymentIntent.getId());
         } catch (Exception e) {
