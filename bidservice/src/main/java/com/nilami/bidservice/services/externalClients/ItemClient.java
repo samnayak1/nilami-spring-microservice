@@ -14,18 +14,11 @@ import com.nilami.bidservice.configs.FeignHeaderForwardingConfig;
 import com.nilami.bidservice.dto.ItemDTO;
 import com.nilami.bidservice.dto.SimplifiedItemDTO;
 
-
-@FeignClient(
-    name = "catalog-server-service",
-    url="${CATALOG_SERVICE_HOST}",
-    configuration = FeignHeaderForwardingConfig.class)
+@FeignClient(name = "catalog-server-service", url = "${CATALOG_SERVICE_HOST}", configuration = FeignHeaderForwardingConfig.class, fallbackFactory = ItemClientFallbackFactory.class)
 public interface ItemClient {
 
     @GetMapping("/api/v1/items/{id}")
     ItemDTO getItem(@PathVariable("id") String itemId);
-
-    @GetMapping("/api/v1/items/{id}/expiry")
-    Boolean checkExpiry(@PathVariable("id") String itemId);
 
     @PostMapping("/api/v1/items/details")
     List<SimplifiedItemDTO> getItemDetails(@RequestBody List<String> itemIds);

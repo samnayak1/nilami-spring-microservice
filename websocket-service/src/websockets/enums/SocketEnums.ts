@@ -1,5 +1,5 @@
 export enum SocketRooms{
-    ItemBids="item-bids"
+    ItemBids="item-bid"
 }
 
 export enum EventEnums{

@@ -27,25 +27,34 @@ import javax.crypto.spec.SecretKeySpec;
 import org.springframework.http.HttpStatus;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import org.springframework.web.bind.annotation.RestController;
 import com.nilami.authservice.configs.CognitoProperties;
+import com.nilami.authservice.controllers.requestTypes.CreatePaymentIntentRequest;
 import com.nilami.authservice.controllers.requestTypes.LoginRequest;
 import com.nilami.authservice.controllers.requestTypes.RefreshTokenRequest;
 import com.nilami.authservice.controllers.requestTypes.SignupRequest;
 import com.nilami.authservice.controllers.requestTypes.TokenValidationRequest;
 import com.nilami.authservice.dto.ApiResponse;
+import com.nilami.authservice.dto.CreatePaymentGatewayResponse;
 import com.nilami.authservice.dto.LoginResponse;
 import com.nilami.authservice.dto.RefreshTokenResponse;
 import com.nilami.authservice.dto.TokenValidationResponse;
+import com.nilami.authservice.dto.UserDTO;
 import com.nilami.authservice.models.UserInfo;
 import com.nilami.authservice.models.UserModel;
+import com.nilami.authservice.services.PaymentGatewayService;
 import com.nilami.authservice.services.UserAuthSignupService;
+import com.nilami.authservice.services.UserService;
 import com.nilami.authservice.services.UserSignupService;
+import com.stripe.exception.StripeException;
 
+import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
 
 @RestController
@@ -57,15 +66,22 @@ public class AuthController {
     private final UserAuthSignupService userAuthSignupService;
     private final CognitoIdentityProviderClient cognitoClient;
     private final CognitoProperties cognitoProps;
+    private final UserService userService;
+    private final PaymentGatewayService paymentGatewayService;
 
     public AuthController(UserSignupService userSignupService,
             UserAuthSignupService userAuthSignupService,
             CognitoIdentityProviderClient cognitoClient,
-            CognitoProperties cognitoProps) {
+            CognitoProperties cognitoProps,
+            UserService userService,
+            PaymentGatewayService paymentGatewayService
+        ) {
         this.userSignupService = userSignupService;
         this.userAuthSignupService = userAuthSignupService;
         this.cognitoClient = cognitoClient;
         this.cognitoProps = cognitoProps;
+        this.userService = userService;
+        this.paymentGatewayService = paymentGatewayService;
     }
 
     @PostMapping("/login")
@@ -189,16 +205,22 @@ public ResponseEntity<?> validateToken(@RequestBody TokenValidationRequest reque
                 .map(GroupType::groupName)
                 .collect(Collectors.toList());
 
- 
+        UserDTO user=  userService.getUserDetails(response.username());
         UserInfo userInfo = new UserInfo();
         userInfo.setUserId(response.username());
-        userInfo.setUsername(response.username());
+        userInfo.setUsername(user.getName());
         userInfo.setEmail(response.userAttributes().stream()
                 .filter(a -> a.name().equals("email"))
                 .findFirst()
                 .map(AttributeType::value)
                 .orElse(null));
         userInfo.setRoles(roles);
+        userInfo.setBalance(user.getBalance());
+        userInfo.setAddress(user.getAddress());
+        userInfo.setBio(user.getBio());
+        userInfo.setCreated(userInfo.getCreated());
+        
+   
 
 
         return ResponseEntity.ok(new TokenValidationResponse(true, "Token is valid", userInfo));
@@ -207,6 +229,38 @@ public ResponseEntity<?> validateToken(@RequestBody TokenValidationRequest reque
         return ResponseEntity.ok(new TokenValidationResponse(false, "Token is invalid", null));
     }
 }
+
+  
+
+    @GetMapping("/payment/test")
+    public ResponseEntity<String> testController() {
+        return ResponseEntity.ok("Hello");
+    }
+
+    @PostMapping("/payment/create-payment-intent")
+    public ResponseEntity<CreatePaymentGatewayResponse> createPaymentIntent(
+            @RequestBody CreatePaymentIntentRequest request,
+            @Parameter(hidden = true) @RequestHeader("X-User-Id") String userId)
+            throws StripeException {
+
+        CreatePaymentGatewayResponse response = paymentGatewayService
+                .createPaymentIntent(
+                        userId,
+                        request.getAmount(),
+                        request.getCurrency());
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/payment/webhook")
+    public ResponseEntity<String> handleWebhook(
+            @RequestBody String payload,
+            @RequestHeader("Stripe-Signature") String sigHeader) {
+
+        Boolean success = paymentGatewayService.handleWebhook(payload, sigHeader);
+
+        return ResponseEntity.ok("Success" + success);
+    }
 
     private String calculateSecretHash(String userName) {
         String clientId = cognitoProps.getClientId();

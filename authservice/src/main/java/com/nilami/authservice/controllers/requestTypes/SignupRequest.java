@@ -9,6 +9,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Null;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
@@ -33,6 +34,10 @@ public class SignupRequest {
     
     @NotBlank(message = "Password is required")
     @Size(min = 8, max = 100, message = "Password must be at least 8 characters")
+    @Pattern(
+        regexp = "^(?=.*[0-9]).*$", 
+        message = "Password must contain at least one numeric character"
+    )
     private String password;
     
     @Min(value = 18, message = "Age must be at least 18")

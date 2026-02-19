@@ -13,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.nilami.catalogservice.controllers.requestTypes.CreateItemRequestType;
 import com.nilami.catalogservice.dto.ApiResponse;
@@ -50,16 +51,25 @@ public class ItemServiceImpl implements ItemService {
         UUID itemIdInUUID = UUID.fromString(itemId);
         Item item = itemRepository.findById(itemIdInUUID)
                 .orElseThrow(() -> new RuntimeException("Item not found"));
-        return ItemDTO.toItemDTO(item, fileService);
+        List<UUID> itemIds = List.of(UUID.fromString(itemId));
+
+
+        Map<String, BigDecimal> highestBids = getHighestBids(itemIds);
+        BigDecimal highestBid = highestBids.getOrDefault(itemId, BigDecimal.ZERO);
+        ItemDTO itemDTO = ItemDTO.toItemDTO(item, fileService);
+        itemDTO.setHighestBidPrice(highestBid);
+        
+        return itemDTO;
     }
  
     @Override
+    @Transactional(readOnly = true)
     public Page<ItemDTO> getAllItems(String categoryId,Pageable pageable) {
 
     Page<Item> itemsPage;
 
     if(categoryId!=null&& !categoryId.isEmpty()){
-          itemsPage = itemRepository.findByCategoryId(categoryId, pageable);
+          itemsPage = itemRepository.findByCategoryId(UUID.fromString(categoryId), pageable);
     } else{
 
            itemsPage=itemRepository.findAll(pageable);
@@ -136,10 +146,11 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<ItemDTO> searchItem(String keyword, Pageable pageable) {
         String keywordSanitized = escapeLike(keyword);
         Page<Item> itemsPage = itemRepository
-                .findByTitleStartingWithIgnoreCaseOrDescriptionStartingWithIgnoreCase(keywordSanitized, keywordSanitized, pageable);
+                .findByTitleStartingWithIgnoreCase(keywordSanitized, pageable);
 
         List<ItemDTO> dtoList = itemsPage.getContent()
                 .stream()

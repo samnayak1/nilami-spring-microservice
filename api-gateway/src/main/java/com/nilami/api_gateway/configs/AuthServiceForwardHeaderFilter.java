@@ -88,7 +88,7 @@ protected boolean shouldNotFilter(HttpServletRequest request) {
            path.startsWith("/api/v1/auth/validate-token") ||
            path.contains("/v3/api-docs") ||    
            path.startsWith("/swagger-ui") ||
-
+           path.startsWith("/api/v1/auth/payment/webhook") ||
            path.matches(".*/swagger-ui.*") ||   
            path.startsWith("/actuator");
 }

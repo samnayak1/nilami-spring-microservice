@@ -100,6 +100,14 @@ public class ItemServiceTest {
                 .thenReturn(URI.create("https://mock-s3.com/pic1.png").toURL());
         when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic2.jpg"))
                 .thenReturn(URI.create("https://mock-s3.com/pic2.jpg").toURL());
+                Map<String, BigDecimal> highestBidsMap = new HashMap<>();
+        highestBidsMap.put(item.getId().toString(), new BigDecimal("100.00"));
+        
+        ApiResponse<Map<String, BigDecimal>> mockResponse = 
+            new ApiResponse<>(true, "Success", highestBidsMap);
+        
+        when(bidClient.getHighestBidsForItems(any(GetHighestBidsRequest.class)))
+            .thenReturn(mockResponse);
 
         ItemDTO result = itemService.getItem(item.getId().toString());
 
@@ -131,10 +139,7 @@ public class ItemServiceTest {
         
         ApiResponse<Map<String, BigDecimal>> mockResponse = 
             new ApiResponse<>(true, "Success", highestBidsMap);
-        
 
-        
-        // Mock the client call
         when(bidClient.getHighestBidsForItems(any(GetHighestBidsRequest.class)))
             .thenReturn(mockResponse);
 
@@ -191,8 +196,8 @@ public class ItemServiceTest {
     void testSearchItem() throws Exception {
         Pageable pageable = PageRequest.of(0, 10);
 
-        when(itemRepository.findByTitleStartingWithIgnoreCaseOrDescriptionStartingWithIgnoreCase(
-                "lap", "lap", pageable))
+        when(itemRepository.findByTitleStartingWithIgnoreCase(
+                "lap", pageable))
                 .thenReturn(new PageImpl<>(List.of(item), pageable, 1));
 
         when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic1.png"))
@@ -206,7 +211,7 @@ public class ItemServiceTest {
         assertEquals("Laptop", results.toList().get(0).getTitle());
 
         verify(itemRepository, times(1))
-                .findByTitleStartingWithIgnoreCaseOrDescriptionStartingWithIgnoreCase("lap", "lap", pageable);
+                .findByTitleStartingWithIgnoreCase("lap", pageable);
     }
 
 }
