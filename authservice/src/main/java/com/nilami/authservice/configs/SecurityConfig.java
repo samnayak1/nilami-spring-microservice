@@ -27,7 +27,10 @@ public class SecurityConfig {
                     "/v3/api-docs/**",
                     "/swagger-ui/**",
                     "/swagger-ui.html",
-                    "/actuator/prometheus", "/actuator/health/**", "/actuator/info"
+                    "/actuator/prometheus", 
+                    "/actuator/health/**", 
+                    "/actuator/info",
+                    "/api/v1/auth/payment/webhook"
                 ).permitAll()
                 .anyRequest().authenticated()
             )

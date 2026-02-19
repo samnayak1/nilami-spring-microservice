@@ -48,7 +48,8 @@ public class SecurityConfig {
                                 "/*/v3/api-docs/**",
                                 "/auth/v3/api-docs/**", 
                                 "/catalog/v3/api-docs/**", 
-                                "/bid/v3/api-docs/**"
+                                "/bid/v3/api-docs/**",
+                                "/api/v1/auth/payment/webhook"
                             )
                         .permitAll()
                         .anyRequest().authenticated())

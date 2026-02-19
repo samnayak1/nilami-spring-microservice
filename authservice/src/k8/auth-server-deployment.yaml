@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: auth-server
-          image: samnayak1/auth-server:1.0.29
+          image: samnayak1/auth-server:2.0.1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8081
@@ -153,6 +153,25 @@ spec:
                 secretKeyRef:
                   name: catalog-secret
                   key: AWS_SECRET_ACCESS_KEY
+
+            - name: STRIPE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: auth-service-secrets
+                  key: STRIPE_SECRET_KEY
+
+            - name: STRIPE_PUBLISHABLE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: auth-service-secrets
+                  key: STRIPE_PUBLISHABLE_KEY
+
+            - name: STRIPE_WEBHOOK_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: auth-service-secrets
+                  key: STRIPE_WEBHOOK_SECRET
+                  
 
             
 

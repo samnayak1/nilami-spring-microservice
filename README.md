@@ -369,3 +369,19 @@ kubectl get secret monitoring-grafana -o jsonpath="{.data.admin-password}" | bas
 | Describe resource | `kubectl describe <resource-type> <resource-name> -n <namespace>` |
 
 ---
+
+
+Stripe
+
+stripe listen --events payment_intent.succeeded,payment_intent.payment_failed --forward-to http://app.local/api/v1/auth/payment/webhook
+
+stripe payment_intents create \
+  -d amount=2000 \
+  -d currency=usd \
+  -d "metadata[userId]=user123" \
+  -d "automatic_payment_methods[enabled]=true" \
+  -d "automatic_payment_methods[allow_redirects]=never"
+
+
+stripe payment_intents confirm <payment_intent_id> --payment-method=pm_card_visa
+
