@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class OpenApiConfig {
 
-    @Bean
+ @Bean
     public GroupedOpenApi gatewayApi() {
         return GroupedOpenApi.builder()
             .group("gateway")

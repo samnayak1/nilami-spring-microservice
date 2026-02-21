@@ -1,20 +1,38 @@
 package com.nilami.api_gateway.externalServices;
 
-import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.beans.factory.annotation.Value;
 
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.stereotype.Component;
 
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import com.nilami.dto.TokenValidationRequest;
 import com.nilami.dto.TokenValidationResponse;
 
-@FeignClient(name = "auth-service",
-url = "${AUTH_SERVICE_HOST}",
- path = "/api/v1/auth")
-public interface UserClient {
+import reactor.core.publisher.Mono;
 
-    @GetMapping("/validate-token")
-    public TokenValidationResponse validateToken(@RequestBody TokenValidationRequest request);
+@Component
+public class UserClient {
 
+    private final WebClient webClient;
+
+    public UserClient(WebClient.Builder webClientBuilder, 
+                      @Value("${AUTH_SERVICE_HOST}") String baseUrl) {
+      
+        this.webClient = webClientBuilder
+                .baseUrl(baseUrl)
+                .build();
+    }
+
+    public Mono<TokenValidationResponse> validateToken(TokenValidationRequest request) {
+        return this.webClient.post()
+                .uri("/api/v1/auth/validate-token")
+                .bodyValue(request)
+                .retrieve()
+            
+                .onStatus(HttpStatusCode::isError, response -> 
+                    Mono.error(new RuntimeException("Auth Service Error")))
+                .bodyToMono(TokenValidationResponse.class);
+    }
 }
