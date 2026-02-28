@@ -7,23 +7,23 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 
-import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
+import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
+import org.springframework.security.config.web.server.ServerHttpSecurity;
+
+import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.cors.reactive.CorsConfigurationSource; 
+import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 
 @Configuration
-@EnableMethodSecurity
+@EnableWebFluxSecurity 
 public class SecurityConfig {
 
-    private final AuthServiceForwardHeaderFilter authFilter;
+    private final AuthServiceForwardHeaderWebFilter authFilter;
 
-    public SecurityConfig(AuthServiceForwardHeaderFilter authFilter) {
+    public SecurityConfig(AuthServiceForwardHeaderWebFilter authFilter) {
         this.authFilter = authFilter;
     }
 
@@ -31,47 +31,38 @@ public class SecurityConfig {
     private List<String> allowedOrigins;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(AbstractHttpConfigurer::disable)
+    public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
+        return http
+                .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/api/v1/gateway/test",
+                .authorizeExchange(exchanges -> exchanges
+                        .pathMatchers("/api/v1/gateway/test",
                                 "/api/v1/auth/signup",
                                 "/api/v1/auth/login",
                                 "/api/v1/auth/test",
                                 "/api/v1/auth/refresh",
                                 "/api/v1/auth/validate-token",
-                                "/actuator/prometheus", "/actuator/health/**", "/actuator/info",
+                                "/actuator/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/*/v3/api-docs/**",
-                                "/auth/v3/api-docs/**", 
-                                "/catalog/v3/api-docs/**", 
-                                "/bid/v3/api-docs/**",
-                                "/api/v1/auth/payment/webhook"
-                            )
-                        .permitAll()
-                        .anyRequest().authenticated())
-                .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class);
-
-        return http.build();
+                                "/api/v1/auth/payment/webhook").permitAll()
+                        .anyExchange().authenticated())
+          
+                .addFilterAt(authFilter, SecurityWebFiltersOrder.AUTHENTICATION)
+                .build();
     }
-
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-
-        configuration.setAllowedOrigins(allowedOrigins); 
+        configuration.setAllowedOrigins(allowedOrigins);
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
         configuration.setAllowCredentials(true);
-        configuration.setMaxAge(3600L); 
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
-        return source;
+        return (CorsConfigurationSource) source;
     }
-
 }
