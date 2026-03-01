@@ -385,3 +385,11 @@ stripe payment_intents create \
 
 stripe payment_intents confirm <payment_intent_id> --payment-method=pm_card_visa
 
+
+cd ~/.ssh
+ssh -i "nilami-server-key.pem" ubuntu@ec2-43-205-140-166.ap-south-1.compute.amazonaws.com
+
+
+ssh -i "nilami-server-key.pem" -L 8200:127.0.0.1:8200 ubuntu@ec2-43-205-140-166.ap-south-1.compute.amazonaws.com
+kubectl port-forward -n vault svc/vault 8200:8200
+
