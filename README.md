@@ -207,6 +207,14 @@ psql -h localhost -p 5432 -U <user> -d <database>
 
 kubectl patch pv <pv id> -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}'
 
+# Patch auth-db
+kubectl patch cluster auth-db --type merge -p '{"spec":{"resources":{"requests":{"cpu":"100m","memory":"256Mi"},"limits":{"cpu":"500m","memory":"512Mi"}}}}'
+
+# Patch bid-db
+kubectl patch cluster bid-db --type merge -p '{"spec":{"resources":{"requests":{"cpu":"100m","memory":"256Mi"},"limits":{"cpu":"500m","memory":"512Mi"}}}}'
+
+# Patch catalog-db
+kubectl patch cluster catalog-db --type merge -p '{"spec":{"resources":{"requests":{"cpu":"100m","memory":"256Mi"},"limits":{"cpu":"500m","memory":"512Mi"}}}}'
 
 
 
@@ -386,10 +394,5 @@ stripe payment_intents create \
 stripe payment_intents confirm <payment_intent_id> --payment-method=pm_card_visa
 
 
-cd ~/.ssh
-ssh -i "nilami-server-key.pem" ubuntu@ec2-43-205-140-166.ap-south-1.compute.amazonaws.com
 
-
-ssh -i "nilami-server-key.pem" -L 8200:127.0.0.1:8200 ubuntu@ec2-43-205-140-166.ap-south-1.compute.amazonaws.com
-kubectl port-forward -n vault svc/vault 8200:8200
 
