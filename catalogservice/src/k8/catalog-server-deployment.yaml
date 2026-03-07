@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: catalog-server-container
-        image: samnayak1/catalogbackend:1.0.18
+        image: samnayak1/catalogbackend:1.0.19
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8085
@@ -50,12 +50,12 @@ spec:
           timeoutSeconds: 5
           failureThreshold: 30
         resources:
-          limits:
-            memory: "768Mi"
-            cpu: "500m"
-          requests:
-            memory: "512Mi"
-            cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+            requests:
+              memory: "128Mi"
+              cpu: "50m"
   
         env:
         - name: SERVER_PORT

@@ -1,39 +1,34 @@
 # Nilami
 
-## Introduction
+Nilami is a microservices-based auction platform that allows users to bid on items while giving administrators the tools to list and manage sales.
 
-Nilami is a microservices-based auction application designed for bidding. The platform allows users to bid for items while providing administrators with the tools to list and manage sales.
-
-
-
-The architecture is built using:
-
+**Tech Stack:**
 - **Backend:** Spring Boot, Spring Data JPA
 - **Database Migration:** Flyway
 - **Containerization:** Docker
-- **Orchestration:** Kubernetes 
+- **Orchestration:** Kubernetes
 - **Security & Identity:** AWS Cognito
-- **File Storage:** AWS s3
-- **Secret Management:** Hashicorp Vault
+- **File Storage:** AWS S3
+- **Secret Management:** HashiCorp Vault
 
-![Nilami Architechture](nilami.svg)
+**Client:** [nilami-dashboard](https://github.com/samnayak1/nilami-dashboard)
+
 ---
 
 ## Prerequisites
 
-The following tools must be installed to run the project:
-
-1. Docker
-2. k3s
-3. Helm
+- Docker
+- k3s
+- Helm
 
 ---
 
-## Local Development Setup
+## Local Development
 
 ### Create a New Service
 
-To bootstrap a new microservice using the Spring Initializr API:
+Bootstrap a new microservice using the Spring Initializr API:
+
 ```bash
 curl https://start.spring.io/starter.zip \
   -d language=java \
@@ -48,7 +43,6 @@ curl https://start.spring.io/starter.zip \
 
 ### Start Infrastructure
 
-Start the local Kubernetes cluster with the required resources using K3s:
 ```bash
 # Install K3s
 curl -sfL https://get.k3s.io | sh -s - --write-kubeconfig-mode=644
@@ -62,182 +56,173 @@ sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
 sudo chown $USER:$USER ~/.kube/config
 export KUBECONFIG=~/.kube/config
 
-# Manage K3s service
+# Manage the K3s service
+sudo systemctl start k3s
 sudo systemctl stop k3s
 sudo systemctl status k3s
-sudo systemctl start k3s
 ```
 
 ---
-### Documentation
 
-## Swagger
-Forward the port 8084 of the service api-gateway
+## API Documentation (Swagger)
+
+Port-forward the API gateway, then open the Swagger UI:
 
 ```bash
 kubectl port-forward svc/api-gateway 8084:8084
 ```
-Then visit
 
-```bash
- http://localhost:8080/swagger-ui.html
- ```
-
-
+Visit: `http://localhost:8080/swagger-ui.html`
 
 ---
+
 ## Image Management
 
-### Docker Hub
 ```bash
-# Build image
+# Build
 docker build -t <imagename>:latest .
 
-# Tag image
+# Tag
 docker tag <imagename>:latest <dockerhub-username>/<imagename>:<version>
 
-# Push to Docker Hub
-docker push <dockerhub-username>/<image-name>:<version>
+# Push
+docker push <dockerhub-username>/<imagename>:<version>
 ```
-
-
 
 ---
 
-## Secret Management
+## Secret Management (HashiCorp Vault)
 
-### Hashicorp Vault (Current Standard)
+### Install Vault
 
-The project uses Hashicorp Vault with the External Secrets Operator.
-
-#### Install Vault
 ```bash
-# Add Hashicorp Helm repository
 helm repo add hashicorp https://helm.releases.hashicorp.com
 helm repo update
-
-# Install Vault
 helm install vault hashicorp/vault -n vault --create-namespace -f vault-values.yaml
 
-# Port forward to access Vault
+# Access the Vault UI
 kubectl port-forward -n vault svc/vault 8200:8200
 ```
 
-#### Install External Secrets Operator
-```bash
-# Add External Secrets Helm repository
-helm repo add external-secrets https://charts.external-secrets.io
+### Install External Secrets Operator
 
-# Install External Secrets
+```bash
+helm repo add external-secrets https://charts.external-secrets.io
 helm install external-secrets external-secrets/external-secrets \
   --namespace external-secrets --create-namespace
-
-# List Helm releases in monitoring namespace
-helm list -n monitoring
 ```
 
-#### Initialize and Unseal Vault
+### Initialize and Unseal Vault
+
 ```bash
-# Access Vault pod
+# Shell into the Vault pod
 kubectl exec -n vault -it vault-0 -- sh
 
-# Initialize Vault
+# Initialize
 vault operator init
 
-# Check Vault status
+# Check status
 kubectl exec -n vault vault-0 -- vault status
 
-# Unseal Vault (repeat with different keys until unsealed)
+# Unseal (run with different keys until unsealed)
 kubectl exec -n vault vault-0 -- vault operator unseal <key1>
 kubectl exec -n vault vault-0 -- vault operator unseal <key2>
-# ... continue until unsealed
 ```
 
-#### Configure Vault Policy and Tokens
-```bash
-# Access Vault pod
-kubectl exec -n vault -it vault-0 -- sh
+### Configure Vault Policy and Token
 
-# Login with root token
+```bash
+# Shell into Vault and log in
+kubectl exec -n vault -it vault-0 -- sh
 vault login <ROOT_TOKEN>
 
-# Copy policy file to Vault pod
+# Copy and apply policy
 kubectl cp vault-read.hcl vault/vault-0:/tmp/vault-read.hcl
-
-# Create policy
 kubectl exec -it -n vault vault-0 -- vault policy write vault-read /tmp/vault-read.hcl
 
 # Create Kubernetes secret with Vault token
 kubectl create secret generic vault-token -n external-secrets --from-literal=token=<root-token>
 ```
 
-#### Verify Vault Configuration
+### Verify Vault Configuration
+
 ```bash
-# Describe external secret
 kubectl describe externalsecret <secret-name> -n <namespace>
-
-# Describe cluster secret store
 kubectl describe ClusterSecretStore vault-backend
-
-# View all external secrets
 kubectl get externalsecrets -A
-
-# Restart External Secrets deployment
 kubectl rollout restart deployment external-secrets -n external-secrets
 ```
 
 ---
 
 ## Database (CloudNativePG)
+
+### Install Operator
+
 ```bash
-# Install CloudNativePG Operator
 kubectl apply --server-side -f \
   https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-1.28/releases/cnpg-1.28.0.yaml
+```
 
-# Port forward to database
+### Connect to a Database
+
+```bash
+# Port-forward
 kubectl port-forward svc/catalog-db-rw 5432:5432 &
 
-# Access database
+# List databases
 kubectl exec -it catalog-db-1 -- psql -U postgres -c "\l"
 
-# Connect to database directly
+# Direct connection
 psql -h localhost -p 5432 -U <user> -d <database>
+```
 
-#patch to set reclaim policy to retain instead of delete. Also do Vault and Kafka
+### Patch Persistent Volume Reclaim Policy
 
-kubectl patch pv <pv id> -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}'
+```bash
+kubectl patch pv <pv-id> -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}'
+```
 
+### Patch Database Resource Limits
 
+```bash
+# auth-db
+kubectl patch cluster auth-db --type merge -p \
+  '{"spec":{"resources":{"requests":{"cpu":"100m","memory":"256Mi"},"limits":{"cpu":"500m","memory":"512Mi"}}}}'
 
+# bid-db
+kubectl patch cluster bid-db --type merge -p \
+  '{"spec":{"resources":{"requests":{"cpu":"100m","memory":"256Mi"},"limits":{"cpu":"500m","memory":"512Mi"}}}}'
 
+# catalog-db
+kubectl patch cluster catalog-db --type merge -p \
+  '{"spec":{"resources":{"requests":{"cpu":"100m","memory":"256Mi"},"limits":{"cpu":"500m","memory":"512Mi"}}}}'
 ```
 
 ---
 
 ## Ingress
 
-### Install Ingress Controller
+### Install NGINX Ingress Controller
+
 ```bash
-# Install NGINX Ingress Controller for Kind
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
 ```
 
 ### Test Ingress
+
 ```bash
-# Test WebSocket connection
 curl -v "http://app.local/ws/socket.io/?EIO=4&transport=polling"
 ```
 
 ### Install cert-manager
+
 ```bash
-# Add Jetstack Helm repository
 helm repo add jetstack https://charts.jetstack.io
 helm repo update
 
-# Install cert-manager CRDs
 kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.3/cert-manager.crds.yaml
 
-# Install cert-manager
 helm install cert-manager jetstack/cert-manager \
   --namespace cert-manager \
   --create-namespace \
@@ -245,85 +230,122 @@ helm install cert-manager jetstack/cert-manager \
 ```
 
 ### Verify cert-manager
+
 ```bash
-# Check cluster issuers
 kubectl get clusterissuer
-
-# Check certificates
 kubectl get certificate -n default
-
-# Describe specific certificate
 kubectl describe certificate app-local-tls -n default
-
-# Get domain information
 kubectl get svc -n kube-system | grep traefik
 ```
 
 ---
 
-## Troubleshooting & Operations
+### HTTPS with Let's Encrypt (cert-manager + Traefik)
 
-### Common Kubernetes Commands
+This sets up automatic TLS for `server.nilami.click` using cert-manager and Let's Encrypt via the HTTP-01 challenge. Port 80 must be open for the challenge to work. Once done, the backend will be reachable at `https://server.nilami.click`.
 
-#### Restart Deployment
+**Step 1 — Install cert-manager**
+
 ```bash
-# Restart specific deployment
-kubectl rollout restart deployment/<deployment-name>
-
-# Restart External Secrets deployment
-kubectl rollout restart deployment external-secrets -n external-secrets
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.0/cert-manager.yaml
 ```
 
-#### Monitor Pods
+Wait until all three pods are running:
+
 ```bash
-# Watch pods in real-time
-kubectl get pods -w
+kubectl get pods -n cert-manager
 ```
 
-#### Access Pod Shell
-```bash
-# Bash into a pod
-kubectl exec -it -n <namespace> <pod> -- bash
+**Step 2 — Create the ClusterIssuer**
+
+The `ClusterIssuer` tells cert-manager how to communicate with Let's Encrypt. Create `issuer.yaml`:
+
+```yaml
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: your-email@example.com  # Use a real email to receive renewal alerts
+    privateKeySecretRef:
+      name: letsencrypt-prod-key
+    solvers:
+    - http01:
+        ingress:
+          class: traefik
 ```
 
-
-#### Port Forwarding
 ```bash
-# Forward API Gateway port
-kubectl port-forward svc/api-gateway 8084:8084
+kubectl apply -f issuer.yaml
 ```
 
-#### Resource Usage
-```bash
-# Enable metrics server (Minikube)
-minikube addons enable metrics-server
+**Step 3 — Update the Ingress**
 
-# View pod resource usage
-kubectl top pods --all-namespaces --sort-by=memory
+Add the cert-manager annotation and a `tls` block to `app-ingress`. cert-manager will automatically create and populate the TLS secret.
+
+```bash
+kubectl edit ingress app-ingress
 ```
 
-### Cleanup
-```bash
-# Scale down deployment to zero replicas
-kubectl scale deployment <deployment-name> --replicas=0
-
-# Clear kubectl cache
-rm -rf ~/.kube/cache ~/.kube/http-cache
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    kubernetes.io/ingress.class: "traefik"
+    acme.cert-manager.io/http01-edit-in-place: "true"
+spec:
+  tls:
+  - hosts:
+    - server.nilami.click
+    secretName: server-nilami-tls  # Created automatically by cert-manager
+  rules:
+  - host: server.nilami.click
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: api-gateway
+            port:
+              number: 8084
 ```
 
 ---
 
-## Monitoring (not used right now)
+## Stripe
 
-The monitoring stack includes:
-
-- **Prometheus:** Collects and stores metrics (CPU usage, request rates, error counts, etc.)
-- **Loki:** Collects and stores logs (application logs, error messages, debug info)
-- **Grafana:** Visualizes everything in dashboards and handles alerting
-
-### Install Monitoring Stack
 ```bash
-# Install Loki stack with Prometheus and Grafana
+# Listen for events in development
+stripe listen \
+  --events payment_intent.succeeded,payment_intent.payment_failed \
+  --forward-to http://app.local/api/v1/auth/payment/webhook
+
+# Create a test payment intent
+stripe payment_intents create \
+  -d amount=2000 \
+  -d currency=usd \
+  -d "metadata[userId]=user123" \
+  -d "automatic_payment_methods[enabled]=true" \
+  -d "automatic_payment_methods[allow_redirects]=never"
+
+# Confirm with a test card
+stripe payment_intents confirm <payment_intent_id> --payment-method=pm_card_visa
+```
+
+---
+
+## Monitoring *(not currently active)*
+
+The monitoring stack uses Prometheus (metrics), Loki (logs), and Grafana (dashboards/alerting).
+
+```bash
+# Install stack
 helm install monitoring grafana/loki-stack \
   --set prometheus.enabled=true \
   --set loki.enabled=true \
@@ -334,54 +356,39 @@ helm upgrade monitoring grafana/loki-stack \
   --set loki.image.tag=2.9.4 \
   --reuse-values
 
-# Upgrade with custom values file
+# Upgrade with custom values
 helm upgrade monitoring grafana/loki-stack -f monitoring-values.yaml
-
-# Delete Prometheus node exporter daemonset (if needed)
-kubectl delete daemonset monitoring-prometheus-node-exporter
 
 # Restart monitoring deployments
 kubectl rollout restart deployment -n monitoring
-```
 
-### Access Grafana
-```bash
-# Port forward Grafana service
+# Access Grafana (http://localhost:3000)
 kubectl port-forward svc/monitoring-grafana 3000:80
 
 # Get Grafana admin password
-kubectl get secret monitoring-grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
+kubectl get secret monitoring-grafana -o jsonpath="{.data.admin-password}" | base64 --decode; echo
 ```
 
 ---
 
-## Quick Reference
+## Troubleshooting & Operations
 
-### Common Operations
+### Quick Reference
 
 | Task | Command |
 |------|---------|
-| Access pod shell | `kubectl exec -it -n <namespace> <pod> -- bash` |
+| Shell into a pod | `kubectl exec -it -n <namespace> <pod> -- bash` |
 | Connect to database | `psql -h localhost -p 5432 -U <user> -d <database>` |
-| Port forward service | `kubectl port-forward svc/<service-name> <local-port>:<service-port>` |
-| View logs | `kubectl logs -f <pod-name> -n <namespace>` |
+| Port-forward a service | `kubectl port-forward svc/<service> <local>:<remote>` |
+| Stream logs | `kubectl logs -f <pod> -n <namespace>` |
 | Get pod status | `kubectl get pods -n <namespace>` |
-| Describe resource | `kubectl describe <resource-type> <resource-name> -n <namespace>` |
-
----
-
-
-Stripe
-
-stripe listen --events payment_intent.succeeded,payment_intent.payment_failed --forward-to http://app.local/api/v1/auth/payment/webhook
-
-stripe payment_intents create \
-  -d amount=2000 \
-  -d currency=usd \
-  -d "metadata[userId]=user123" \
-  -d "automatic_payment_methods[enabled]=true" \
-  -d "automatic_payment_methods[allow_redirects]=never"
+| Describe a resource | `kubectl describe <type> <name> -n <namespace>` |
+| Watch pods | `kubectl get pods -w` |
+| Restart a deployment | `kubectl rollout restart deployment/<name>` |
+| Scale down a deployment | `kubectl scale deployment <name> --replicas=0` |
+| View resource usage | `kubectl top pods --all-namespaces --sort-by=memory` |
+| Clear kubectl cache | `rm -rf ~/.kube/cache ~/.kube/http-cache` |
 
 
-stripe payment_intents confirm <payment_intent_id> --payment-method=pm_card_visa
+
 

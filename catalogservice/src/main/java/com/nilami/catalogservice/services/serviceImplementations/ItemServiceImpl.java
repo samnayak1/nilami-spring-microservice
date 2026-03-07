@@ -117,6 +117,7 @@ public class ItemServiceImpl implements ItemService {
                 .brand(request.getBrand())
                 .creatorUserId(userId)
                 .category(category)
+                .location(request.getLocation())
                 // .pictureIds(request.getPictureIds())
                 .expiryTime(request.getExpiryTime())
                 .build();

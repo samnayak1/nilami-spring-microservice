@@ -75,6 +75,12 @@ public class Item {
     @Column(nullable = false)
     private Date expiryTime;
 
+
+    @Column(nullable = true)
+    private String location;
+
+
+
   @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;

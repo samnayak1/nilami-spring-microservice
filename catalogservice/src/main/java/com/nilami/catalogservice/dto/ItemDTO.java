@@ -57,6 +57,8 @@ public class ItemDTO {
 
     private BigDecimal highestBidPrice;
 
+    private String location;
+
     public static ItemDTO toItemDTO(Item item,FileUploadService fileService) {
         return ItemDTO.builder()
                 .id(item.getId())
@@ -78,6 +80,7 @@ public class ItemDTO {
                     .collect(Collectors.toList()))
                 .categoryId(item.getCategory() != null ? item.getCategory().getId() : null)
                 .expiryTime(item.getExpiryTime())
+                .location(item.getLocation())
                 .createdAt(item.getCreatedAt())
                 .updatedAt(item.getUpdatedAt())
                 .deleted(item.isDeleted())
