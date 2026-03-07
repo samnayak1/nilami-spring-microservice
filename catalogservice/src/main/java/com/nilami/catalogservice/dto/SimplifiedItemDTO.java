@@ -27,4 +27,7 @@ public class SimplifiedItemDTO {
     private Date expiryTime;
 
     private boolean deleted;
+   
+    private String location;
+    
 }
