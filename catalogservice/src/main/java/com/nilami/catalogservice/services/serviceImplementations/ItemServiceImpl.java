@@ -9,6 +9,9 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.cache.annotation.CacheEvict;
+
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -19,6 +22,7 @@ import com.nilami.catalogservice.controllers.requestTypes.CreateItemRequestType;
 import com.nilami.catalogservice.dto.ApiResponse;
 import com.nilami.catalogservice.dto.GetHighestBidsRequest;
 import com.nilami.catalogservice.dto.ItemDTO;
+import com.nilami.catalogservice.dto.ListCacheablePage;
 import com.nilami.catalogservice.dto.SimplifiedItemDTO;
 import com.nilami.catalogservice.exceptions.ForbiddenException;
 import com.nilami.catalogservice.exceptions.ItemNotFoundException;
@@ -64,6 +68,11 @@ public class ItemServiceImpl implements ItemService {
  
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(
+    value = "itemFirstPage", 
+    key = "#categoryId != null ? #categoryId : 'all'", 
+    condition = "#pageable.pageNumber == 0"
+    )
     public Page<ItemDTO> getAllItems(String categoryId,Pageable pageable) {
 
     Page<Item> itemsPage;
@@ -93,7 +102,7 @@ public class ItemServiceImpl implements ItemService {
     });
 
         
-        return new PageImpl<>(dtoList, pageable, itemsPage.getTotalElements());
+        return new ListCacheablePage<>(dtoList, pageable.getPageNumber(), pageable.getPageSize(), itemsPage.getTotalElements());
     }
 
     @Override
@@ -104,7 +113,9 @@ public class ItemServiceImpl implements ItemService {
         return item.getExpiryTime().toInstant().isBefore(Instant.now());
     }
 
+    //notice how it's write through cache . Means when the item is created, it writes to the cache AND database. 
     @Override
+    @CacheEvict(value = "itemFirstPage", allEntries = true)
     public Item createItem(CreateItemRequestType request, String userId) {
         UUID categoryIdInUUID = UUID.fromString(request.getCategoryId());
         Category category = categoryRepository.findById(categoryIdInUUID)
