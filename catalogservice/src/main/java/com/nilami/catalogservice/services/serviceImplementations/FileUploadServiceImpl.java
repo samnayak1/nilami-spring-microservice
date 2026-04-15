@@ -55,7 +55,7 @@ public class FileUploadServiceImpl implements FileUploadService {
     }
     
 
-    public URL generatePresignedUrl(String objectName, String objectId) {
+    public URL generatePresignedUrl(String objectName, String objectId,long minutes) {
         try {
 
             String objectKey = objectId + "/" + objectName;
@@ -66,7 +66,7 @@ public class FileUploadServiceImpl implements FileUploadService {
 
             PresignedPutObjectRequest presignedRequest = presigner.presignPutObject(b -> b
 
-                    .signatureDuration(Duration.ofMinutes(10))
+                    .signatureDuration(Duration.ofMinutes(minutes))
                     .putObjectRequest(objectRequest));
 
             return presignedRequest.url();
@@ -76,7 +76,7 @@ public class FileUploadServiceImpl implements FileUploadService {
         }
     }
 
-    public URL generateDownloadPresignedUrl(String objectKey) {
+    public URL generateDownloadPresignedUrl(String objectKey,long minutes) {
         try {
             // String contentType = getContentType(objectKey);
             // System.out.println("content type is"+contentType);
@@ -87,7 +87,7 @@ public class FileUploadServiceImpl implements FileUploadService {
                     .build();
 
             PresignedGetObjectRequest presignedGetRequest = presigner.presignGetObject(b -> b
-                    .signatureDuration(Duration.ofMinutes(10)) // Set an expiration time
+                    .signatureDuration(Duration.ofMinutes(minutes)) // Set an expiration time
                     .getObjectRequest(getObjectRequest));
 
             return presignedGetRequest.url();
@@ -99,19 +99,6 @@ public class FileUploadServiceImpl implements FileUploadService {
 
     }
 
-  
 
-    /*
-     * private String getContentType(String filename) {
-     * try {
-     * Path filePath = Paths.get(filename);
-     * return Files.probeContentType(filePath); // Automatically detect MIME type
-     * based on file extension
-     * } catch (IOException e) {
-     * e.printStackTrace();
-     * return "application/octet-stream"; // Default fallback
-     * }
-     * }
-     */
 
 }

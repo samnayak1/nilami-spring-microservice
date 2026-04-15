@@ -105,7 +105,7 @@ public class ItemController {
 
             List<URL> pictureUrls = pictures.stream()
                     .map(pictureId -> fileUploadService
-                            .generateDownloadPresignedUrl(request.getItemId() + "/" + pictureId))
+                            .generateDownloadPresignedUrl(request.getItemId() + "/" + pictureId,60))
                     .toList();
 
             return ResponseEntity.ok().body(new ApiResponse<List<URL>>(true, "pictures have been added", pictureUrls));

@@ -50,7 +50,8 @@ public class FileUploadController {
 
             URL presignedUrl = fileUploadService.generatePresignedUrl(
                     requestBody.getFileName(),
-                    requestBody.getObjectId());
+                    requestBody.getObjectId(),
+                   10);
             return ResponseEntity.ok(new MessageResponse(presignedUrl.toString()));
 
         } catch (Exception e) {

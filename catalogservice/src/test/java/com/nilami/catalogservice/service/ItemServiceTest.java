@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -96,9 +97,9 @@ public class ItemServiceTest {
     @Test
     void testGetItem() throws Exception {
         when(itemRepository.findById(item.getId())).thenReturn(Optional.of(item));
-        when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic1.png"))
+        when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic1.png",60))
                 .thenReturn(URI.create("https://mock-s3.com/pic1.png").toURL());
-        when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic2.jpg"))
+        when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic2.jpg",60))
                 .thenReturn(URI.create("https://mock-s3.com/pic2.jpg").toURL());
                 Map<String, BigDecimal> highestBidsMap = new HashMap<>();
         highestBidsMap.put(item.getId().toString(), new BigDecimal("100.00"));
@@ -115,16 +116,16 @@ public class ItemServiceTest {
         assertEquals("Laptop", result.getTitle());
         verify(itemRepository, times(1)).findById(item.getId());
         assertEquals(2, result.getPictureIds().size());
-        verify(fileService, times(2)).generateDownloadPresignedUrl(anyString());
+        verify(fileService, times(2)).generateDownloadPresignedUrl(anyString(),anyLong());
     }
 
     @Test
     void testGetAllItems() throws Exception {
         Page<Item> page = new PageImpl<>(List.of(item));
         when(itemRepository.findAll(PageRequest.of(0, 10))).thenReturn(page);
-        when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic1.png"))
+        when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic1.png",60))
                 .thenReturn(URI.create("https://mock-s3.com/pic1.png").toURL());
-        when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic2.jpg"))
+        when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic2.jpg",60))
                 .thenReturn(URI.create("https://mock-s3.com/pic2.jpg").toURL());
 
         UUID item2Id=UUID.randomUUID();
@@ -200,9 +201,9 @@ public class ItemServiceTest {
                 "lap", pageable))
                 .thenReturn(new PageImpl<>(List.of(item), pageable, 1));
 
-        when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic1.png"))
+        when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic1.png",60))
                 .thenReturn(URI.create("https://mock-s3.com/pic1.png").toURL());
-        when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic2.jpg"))
+        when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic2.jpg",60))
                 .thenReturn(URI.create("https://mock-s3.com/pic2.jpg").toURL());
 
         Page<ItemDTO> results = itemService.searchItem("lap", pageable);
