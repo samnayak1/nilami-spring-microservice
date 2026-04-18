@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: websocket-service
-          image: samnayak1/websocket-server:1.0.9
+          image: samnayak1/websocket-server:1.0.10
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3001
@@ -57,6 +57,20 @@ spec:
                 secretKeyRef:
                   name: kafka-consumer-credentials
                   key: password
+            
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: catalog-secret
+                  key: valkey-password
+
+            - name: REDIS_HOST
+              value: my-valkey
+
+            
+
+
+                
                     
 
 
