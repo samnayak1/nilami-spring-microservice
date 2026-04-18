@@ -50,7 +50,7 @@ import com.nilami.bidservice.services.BidService;
 import com.nilami.bidservice.services.externalClients.ItemClient;
 import com.nilami.bidservice.services.externalClients.UserClient;
 
-import jakarta.persistence.OptimisticLockException;
+import jakarta.persistence.PessimisticLockException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -99,6 +99,10 @@ public class BidServiceImplementation implements BidService {
             // check all contraints that the bid has to make like it's past the expiry date
 
             log.debug("before getting last bid of item {} with price {} and userId", itemId, price, userId);
+
+            //PESSIMISTIC LOCK IS USED IN THE REPOSITORY LAYER FOR THIS FIND BY ID CALL.
+            //  SO WHEN TWO REQUESTS COME WITH SAME IDEMPOTENT KEY, 
+            // ONE OF THEM WILL WAIT TILL THE OTHER COMPLETES THE TRANSACTION AND RELEASES THE LOCK. 
             Optional<BidDTO> lastBid = this.getLastBid(itemId);
 
             ItemDTO item = itemClient.getItem(itemId);
@@ -222,7 +226,7 @@ public class BidServiceImplementation implements BidService {
         //     throw new IllegalStateException("Failed to serialize outbox payload", e);
         // }
         
-        catch (OptimisticLockException e) {
+        catch (PessimisticLockException e) {
 
             log.warn("Another request for idempotent key {}", idempotentKey);
             throw new IdempotentKeyException("This bid is already being processed by another request.");
@@ -239,7 +243,7 @@ public class BidServiceImplementation implements BidService {
                         entity.setBidStatus(BidStatus.REJECTED);
                         idempotentKeyRepository.save(entity);
                     }
-                } catch (OptimisticLockException ole) {
+                } catch (PessimisticLockException ole) {
 
                     log.debug("key updated by another thread");
                 }
