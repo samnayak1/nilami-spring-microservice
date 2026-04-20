@@ -29,7 +29,7 @@ import lombok.RequiredArgsConstructor;
 
 @RestController
 @Hidden
-@RequestMapping("/api/v1/internal/auth")
+@RequestMapping("/api/internal/v1/auth")
 @RequiredArgsConstructor
 public class InternalDetailsAuthController {
 

@@ -20,17 +20,17 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers(
-                    "/api/v1/auth/signup",
-                    "/api/v1/auth/validate-token",
-                    "/api/v1/auth/login",
-                    "/api/v1/auth/refresh",
+                    "/api/auth/v1/signup",
+                    "/api/auth/v1/validate-token",
+                    "/api/auth/v1/login",
+                    "/api/auth/v1/refresh",
                     "/v3/api-docs/**",
                     "/swagger-ui/**",
                     "/swagger-ui.html",
                     "/actuator/prometheus", 
                     "/actuator/health/**", 
                     "/actuator/info",
-                    "/api/v1/auth/payment/webhook"
+                    "/api/auth/v1/payment/webhook"
                 ).permitAll()
                 .anyRequest().authenticated()
             )

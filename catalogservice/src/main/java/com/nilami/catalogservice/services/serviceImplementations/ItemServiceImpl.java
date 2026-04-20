@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.nilami.catalogservice.controllers.requestTypes.CreateItemRequestType;
 import com.nilami.catalogservice.dto.ApiResponse;
+import com.nilami.catalogservice.dto.GetHighestBidAlongWithItemIds;
 import com.nilami.catalogservice.dto.GetHighestBidsRequest;
 import com.nilami.catalogservice.dto.ItemDTO;
 import com.nilami.catalogservice.dto.ListCacheablePage;
@@ -207,13 +208,25 @@ public class ItemServiceImpl implements ItemService {
             return UUID.fromString(itemId);
         }).collect(Collectors.toList()).toArray(UUID[]::new);
 
-        List<SimplifiedItemDTO> items = itemRepository.findItemsByVirtualIdList(itemUUIDs);
+        List<SimplifiedItemDTO> items = itemRepository.findItemsByVirtualIdList(itemUUIDs)
+    .stream()
+    .map(p -> new SimplifiedItemDTO(
+        p.getId(),
+        p.getTitle(),
+        p.getBasePrice(),
+        p.getBrand(),
+        p.getExpiryTime(),
+        p.getDeleted(),
+        p.getLocation() 
+    ))
+    .collect(Collectors.toList());
 
         return items;
 
     }
 
-    private Map<String, BigDecimal> getHighestBids(List<UUID> itemIds) {
+    @Override
+    public Map<String, BigDecimal> getHighestBids(List<UUID> itemIds) {
         if (itemIds.isEmpty()) {
             return Collections.emptyMap();
         }
@@ -233,5 +246,30 @@ public class ItemServiceImpl implements ItemService {
             return Collections.emptyMap();
         }
     }
+
+    public Map<String, GetHighestBidAlongWithItemIds> getHighestBidsAlongWithUserId(List<UUID> itemIds) {
+        if (itemIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        try {
+            GetHighestBidsRequest request = new GetHighestBidsRequest(itemIds);
+            ApiResponse<Map<String, GetHighestBidAlongWithItemIds>> response = bidClient.getHighestBidsAlongWithUserId(request);
+
+            if (!response.getSuccess() || response.getData() == null) {
+                log.error("Failed to fetch highest bids along with user id: {}", response.getMessage());
+                return Collections.emptyMap();
+            }
+
+            return response.getData();
+        } catch (Exception e) {
+            log.error("Error fetching highest bids along with user id: {}", e.getMessage(), e);
+            return Collections.emptyMap();
+        }
+    }
+   
+
+    
+   
 
 }

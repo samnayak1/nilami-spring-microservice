@@ -18,7 +18,7 @@ import com.nilami.bidservice.dto.UserDTO;
 
 @FeignClient(name = "auth-service",
 url = "${AUTH_SERVICE_HOST}",
-configuration = FeignHeaderForwardingConfig.class, path = "/api/v1/internal/auth")
+configuration = FeignHeaderForwardingConfig.class, path = "/api/internal/v1/auth")
 public interface UserClient {
 
     @GetMapping("/details")

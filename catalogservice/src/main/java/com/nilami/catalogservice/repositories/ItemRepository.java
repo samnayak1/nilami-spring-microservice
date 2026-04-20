@@ -1,5 +1,6 @@
 package com.nilami.catalogservice.repositories;
 
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -8,15 +9,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
-import com.nilami.catalogservice.dto.SimplifiedItemDTO;
+import com.nilami.catalogservice.dto.SimplifiedItemProjection;
 import com.nilami.catalogservice.models.Item;
 
 public interface ItemRepository extends JpaRepository<Item, UUID> {
 
         Page<Item> findByTitleStartingWithIgnoreCase(
                         String titlePrefix,
-                        Pageable pageable
-                );
+                        Pageable pageable);
 
         // Unset splits it up like VALUES (1), (2), (3), (4)). This is called a virtual
         // table
@@ -27,13 +27,16 @@ public interface ItemRepository extends JpaRepository<Item, UUID> {
                         i.base_price as basePrice,
                         i.brand,
                         i.expiry_time as expiryTime,
-                        i.deleted
+                        i.deleted,
+                        i.location -- add
                         FROM items i
                         JOIN UNNEST(:ids) AS virtual_list(id)
                         ON i.id = virtual_list.id
-                        """, nativeQuery = true)
-        List<SimplifiedItemDTO> findItemsByVirtualIdList(UUID[] ids);
+                       """, nativeQuery = true)
+        List<SimplifiedItemProjection> findItemsByVirtualIdList(UUID[] ids);
 
         Page<Item> findByCategoryId(UUID categoryId, Pageable pageable);
+
+        List<Item> findByExpiryTimeBeforeAndSettledFalse(Date date);
 
 }

@@ -33,10 +33,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
-@RequestMapping("/api/v1/bids")
+@RequestMapping("/api/bids/v1")
 @RequiredArgsConstructor
 @Slf4j
-public class BidController {
+public class BidV1Controller  {
 
     private final BidService bidService;
 
@@ -124,6 +124,8 @@ public class BidController {
             return ResponseEntity.ok(new ApiResponse<Map<String,BigDecimal>>(true, "ItemId to highest Bid Price Map", highestBids));
     
     }
+
+     
 }
 
 

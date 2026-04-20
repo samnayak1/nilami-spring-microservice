@@ -18,7 +18,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
@@ -47,7 +46,6 @@ public class Item {
     private String title;
 
     @Column(columnDefinition = "text")
-    @Lob
     private String description;
 
     @Column(nullable = false)
@@ -81,7 +79,7 @@ public class Item {
 
 
 
-  @CreationTimestamp
+    @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -93,6 +91,9 @@ public class Item {
     @Builder.Default
     private boolean deleted = false;
 
+    @Column(name = "is_settled", nullable = false)
+    @Builder.Default
+    private boolean settled = false;
 
     @Transient
     @Nullable

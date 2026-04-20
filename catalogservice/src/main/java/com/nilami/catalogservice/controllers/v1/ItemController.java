@@ -25,7 +25,7 @@ import com.nilami.catalogservice.services.serviceAbstractions.ItemService;
 import io.swagger.v3.oas.annotations.Parameter;
 
 @RestController
-@RequestMapping("/api/v1/items")
+@RequestMapping("/api/items/v1")
 @RequiredArgsConstructor
 @Slf4j
 public class ItemController {

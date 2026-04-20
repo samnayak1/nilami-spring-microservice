@@ -117,15 +117,15 @@ Instead, WebFlux uses the reactive context — a key-value store that travels wi
     }
 
     private boolean isPublicPath(String path) {
-        return path.startsWith("/api/v1/gateway/test") ||
-                path.startsWith("/api/v1/auth/signup") ||
-                path.startsWith("/api/v1/auth/login") ||
-                path.startsWith("/api/v1/auth/test") ||
-                path.startsWith("/api/v1/auth/refresh") ||
-                path.startsWith("/api/v1/auth/validate-token") ||
+        return path.startsWith("/api/gateway/v1/test") ||
+                path.startsWith("/api/auth/v1/signup") ||
+                path.startsWith("/api/auth/v1/login") ||
+                path.startsWith("/api/auth/v1/test") ||
+                path.startsWith("/api/auth/v1/refresh") ||
+                path.startsWith("/api/auth/v1/validate-token") ||
                 path.contains("/v3/api-docs") ||
                 path.startsWith("/swagger-ui") ||
-                path.startsWith("/api/v1/auth/payment/webhook") ||
+                path.startsWith("/api/auth/v1/payment/webhook") ||
                 path.matches(".*/swagger-ui.*") ||
                 path.startsWith("/actuator");
     }

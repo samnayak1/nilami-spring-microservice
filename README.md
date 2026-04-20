@@ -10,7 +10,7 @@ Nilami is a microservices-based auction platform that allows users to bid on ite
 - **Security & Identity:** AWS Cognito
 - **File Storage:** AWS S3
 - **Secret Management:** HashiCorp Vault
-- **Caching:** Valkey
+- **Caching:** Valkey/ Redis
 
 **Client:** [nilami-dashboard](https://github.com/samnayak1/nilami-dashboard)
 
@@ -173,6 +173,9 @@ kubectl port-forward svc/catalog-db-rw 5432:5432 &
 
 # List databases
 kubectl exec -it catalog-db-1 -- psql -U postgres -c "\l"
+
+#bash into pod
+kubectl exec -it catalog-db-1 -- bash
 
 # Direct connection
 psql -h localhost -p 5432 -U <user> -d <database>

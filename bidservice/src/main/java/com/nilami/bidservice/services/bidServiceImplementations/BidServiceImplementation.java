@@ -65,7 +65,7 @@ public class BidServiceImplementation implements BidService {
 
     private final SagaLogsRepository sagaLogsRepository;
 
-   // private final OutboxRepository outboxRepository;
+    // private final OutboxRepository outboxRepository;
 
     private final UserClient userClient;
 
@@ -73,9 +73,7 @@ public class BidServiceImplementation implements BidService {
 
     private final BidEventPublisher bidEventPublisher;
 
- //   private final ObjectMapper objectMapper;
-
-    
+    // private final ObjectMapper objectMapper;
 
     @Override
     public Optional<BidDTO> getLastBid(String itemId) {
@@ -100,9 +98,10 @@ public class BidServiceImplementation implements BidService {
 
             log.debug("before getting last bid of item {} with price {} and userId", itemId, price, userId);
 
-            //PESSIMISTIC LOCK IS USED IN THE REPOSITORY LAYER FOR THIS FIND BY ID CALL.
-            //  SO WHEN TWO REQUESTS COME WITH SAME IDEMPOTENT KEY, 
-            // ONE OF THEM WILL WAIT TILL THE OTHER COMPLETES THE TRANSACTION AND RELEASES THE LOCK. 
+            // PESSIMISTIC LOCK IS USED IN THE REPOSITORY LAYER FOR THIS FIND BY ID CALL.
+            // SO WHEN TWO REQUESTS COME WITH SAME IDEMPOTENT KEY,
+            // ONE OF THEM WILL WAIT TILL THE OTHER COMPLETES THE TRANSACTION AND RELEASES
+            // THE LOCK.
             Optional<BidDTO> lastBid = this.getLastBid(itemId);
 
             ItemDTO item = itemClient.getItem(itemId);
@@ -139,8 +138,8 @@ public class BidServiceImplementation implements BidService {
 
             // Actual bid process happens from here onwards
 
-
-            // bid status logs is set from pending to creating i.e the rollback starts now if fails
+            // bid status logs is set from pending to creating i.e the rollback starts now
+            // if fails
 
             entity.setBidStatus(BidStatus.CREATING);
             idempotentKeyRepository.save(entity);
@@ -179,36 +178,37 @@ public class BidServiceImplementation implements BidService {
 
             Bid placedBid = bidRepository.save(placedBidEntity);
             log.debug("placed bid is successful for {} with price: {}", placedBid.getItemId(), placedBid.getPrice());
+
             sagaLogsRepository.updateStatus(sagaId, SagaState.BID_PLACED);
             log.debug("bid placed for item: " + placedBid.getItemId());
+
             ApiResponse<Void> commitResponse = userClient.commitBalanceReservation(reservationId);
             log.debug("bid commited for item: " + placedBid.getItemId() + "response evaluated to "
                     + commitResponse.getSuccess());
+
             sagaLogsRepository.updateStatus(sagaId, SagaState.FUNDS_COMMITED);
 
             BidEventMessageQueuePayload messageQueuePayload = new BidEventMessageQueuePayload(
-                    UUID.randomUUID(), //eventId which is unique for idempotent requests
+                    UUID.randomUUID(), // eventId which is unique for idempotent requests
                     UUID.fromString(itemId),
                     placedBid.getId(),
                     price,
                     UUID.fromString(userId),
-                    Instant.now()
-                );
+                    Instant.now());
 
             // String payload = objectMapper.writeValueAsString(messageQueuePayload);
 
             // OutboxEvent outboxEvent = OutboxEvent.builder()
-            //         .eventType(OutboxEventType.BidPlaced)
-            //         .payload(payload)
-            //         .aggregateId(UUID.fromString(itemId))
-            //         .aggregateType("BID")
-            //         .status(OutboxStatus.NEW)
-            //         .build();
+            // .eventType(OutboxEventType.BidPlaced)
+            // .payload(payload)
+            // .aggregateId(UUID.fromString(itemId))
+            // .aggregateType("BID")
+            // .status(OutboxStatus.NEW)
+            // .build();
             // outboxRepository.save(outboxEvent);
 
-
-
-            // fire and forget. This sends an event to the websocket service for the service to relay the latest bid for every other user
+            // fire and forget. This sends an event to the websocket service for the service
+            // to relay the latest bid for every other user
             try {
                 bidEventPublisher.sendBidEventToQueue(messageQueuePayload);
             } catch (Exception ex) {
@@ -223,9 +223,9 @@ public class BidServiceImplementation implements BidService {
             return this.convertToBidDTO(placedBid);
         }
         // } catch (JsonProcessingException e) {
-        //     throw new IllegalStateException("Failed to serialize outbox payload", e);
+        // throw new IllegalStateException("Failed to serialize outbox payload", e);
         // }
-        
+
         catch (PessimisticLockException e) {
 
             log.warn("Another request for idempotent key {}", idempotentKey);
@@ -254,7 +254,7 @@ public class BidServiceImplementation implements BidService {
             log.debug("saga fetched");
 
             List<SagaState> eventsToRevert = new ArrayList<SagaState>();
-            
+
             if (sagaOptional.isPresent()) {
                 SagaLogs saga = sagaOptional.get();
                 switch (saga.getCurrentState()) {
@@ -378,6 +378,7 @@ public class BidServiceImplementation implements BidService {
         List<String> itemIds = bidsOfUser.stream().map(bid -> {
             return bid.getItemId().toString();
         }).distinct().collect(Collectors.toList());
+
         log.debug("items: " + itemIds);
         List<SimplifiedItemDTO> items = itemClient.getItemDetails(itemIds);
         log.debug("items returned from itemClient: " + items);
@@ -447,7 +448,7 @@ public class BidServiceImplementation implements BidService {
 
         List<GetHighestBidAlongWithItemIds> itemIdsWithHighestBids = bidRepository
                 .getItemsHighestBidGivenItemIds(itemIds);
-        System.out.print("itemIdsWithHighestBids:" + itemIdsWithHighestBids);
+
         HashMap<String, BigDecimal> itemIdToHighestBidMap = new HashMap<>();
 
         itemIdsWithHighestBids.forEach(itemToHighestBidKeyValue -> {
@@ -455,10 +456,23 @@ public class BidServiceImplementation implements BidService {
                     itemToHighestBidKeyValue.getItemId().toString(),
                     itemToHighestBidKeyValue.getHighestBidPrice());
         });
-        System.out.print("itemIdToHighestBid:" + itemIdToHighestBidMap);
+
         return itemIdToHighestBidMap;
 
     }
+
+    @Override
+    public Map<String, GetHighestBidAlongWithItemIds> getHighestBids(List<UUID> itemIds) {
+        List<GetHighestBidAlongWithItemIds> itemIdsWithHighestBids = bidRepository
+                .getItemsHighestBidGivenItemIds(itemIds);
+
+        return itemIdsWithHighestBids.stream()
+                .collect(Collectors.toMap(
+                        item -> item.getItemId().toString(),
+                        item -> item));
+    }
+
+    
 
     private void validateBidRequest(String itemId, BigDecimal price, ItemDTO item,
             Optional<BidDTO> lastBid) {

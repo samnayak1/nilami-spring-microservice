@@ -1,0 +1,1 @@
+CREATE INDEX idx_expiry_time_settled ON items(expiry_time, is_settled);

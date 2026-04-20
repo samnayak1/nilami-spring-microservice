@@ -5,5 +5,7 @@ import java.util.UUID;
 
 public interface GetHighestBidAlongWithItemIds {
     UUID getItemId();
+    UUID getUserId();
     BigDecimal getHighestBidPrice();
+
 }

@@ -48,9 +48,9 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
     String path = request.getServletPath();
-    return path.equals("/api/v1/auth/login") || 
-           path.equals("/api/v1/auth/signup") ||
-           path.equals("/api/v1/auth/refresh") ||
-           path.equals("/api/v1/auth/payment/webhook");
+    return path.equals("/api/auth/v1/login") || 
+           path.equals("/api/auth/v1/signup") ||
+           path.equals("/api/auth/v1/refresh") ||
+           path.equals("/api/auth/v1/payment/webhook");
 }
 }
