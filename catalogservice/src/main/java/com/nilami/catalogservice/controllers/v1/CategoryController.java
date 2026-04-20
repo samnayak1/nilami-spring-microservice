@@ -16,7 +16,7 @@ import com.nilami.catalogservice.dto.CategoryDTO;
 import com.nilami.catalogservice.services.serviceImplementations.CategoryServiceImpl;
 
 @RestController
-@RequestMapping("/api/v1/categories")
+@RequestMapping("/api/categories/v1")
 @RequiredArgsConstructor
 public class CategoryController {
 

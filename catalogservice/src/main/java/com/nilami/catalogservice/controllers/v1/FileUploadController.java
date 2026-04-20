@@ -23,7 +23,7 @@ import com.nilami.catalogservice.services.serviceAbstractions.ItemService;
 import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
 @RestController
-@RequestMapping("/api/v1/items/file")
+@RequestMapping("/api/items/v1/file")
 @RequiredArgsConstructor
 public class FileUploadController {
 
@@ -50,7 +50,8 @@ public class FileUploadController {
 
             URL presignedUrl = fileUploadService.generatePresignedUrl(
                     requestBody.getFileName(),
-                    requestBody.getObjectId());
+                    requestBody.getObjectId(),
+                   10);
             return ResponseEntity.ok(new MessageResponse(presignedUrl.toString()));
 
         } catch (Exception e) {

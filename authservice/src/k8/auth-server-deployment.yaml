@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: auth-server
-          image: samnayak1/auth-server:2.0.1
+          image: samnayak1/auth-server:2.0.2
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8081

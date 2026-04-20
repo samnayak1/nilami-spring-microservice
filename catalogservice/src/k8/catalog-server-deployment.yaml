@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: catalog-server-container
-        image: samnayak1/catalogbackend:1.0.19
+        image: samnayak1/catalogbackend:2.0.18
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8085
@@ -109,6 +109,12 @@ spec:
             secretKeyRef:
               name: catalog-secret
               key: AWS_ACCESS_KEY
+        - name: valkey-password
+          valueFrom:
+            secretKeyRef:
+              name: catalog-secret
+              key: valkey-password
+        
         - name: AWS_BUCKET_REGION
           valueFrom:
             secretKeyRef:

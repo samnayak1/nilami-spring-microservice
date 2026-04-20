@@ -36,17 +36,17 @@ public class SecurityConfig {
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeExchange(exchanges -> exchanges
-                        .pathMatchers("/api/v1/gateway/test",
-                                "/api/v1/auth/signup",
-                                "/api/v1/auth/login",
-                                "/api/v1/auth/test",
-                                "/api/v1/auth/refresh",
-                                "/api/v1/auth/validate-token",
+                        .pathMatchers("/api/gateway/v1/test",
+                                "/api/auth/v1/signup",
+                                "/api/auth/v1/login",
+                                "/api/auth/v1/test",
+                                "/api/auth/v1/refresh",
+                                "/api/auth/v1/validate-token",
                                 "/actuator/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/*/v3/api-docs/**",
-                                "/api/v1/auth/payment/webhook").permitAll()
+                                "/api/auth/v1/payment/webhook").permitAll()
                         .anyExchange().authenticated())
           
                 .addFilterAt(authFilter, SecurityWebFiltersOrder.AUTHENTICATION)

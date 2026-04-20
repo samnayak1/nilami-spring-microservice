@@ -27,7 +27,7 @@ public class UserClient {
 
     public Mono<TokenValidationResponse> validateToken(TokenValidationRequest request) {
         return this.webClient.post()
-                .uri("/api/v1/auth/validate-token")
+                .uri("/api/auth/v1/validate-token")
                 .bodyValue(request)
                 .retrieve()
             

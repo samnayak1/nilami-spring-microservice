@@ -39,11 +39,12 @@ public interface BidRepository extends JpaRepository<Bid,UUID>{
     @Query(value="""
             SELECT 
             b.item_id as itemId,
+            b.creator_id as userId,
             MAX(b.price) as highestBidPrice
             FROM bids b
-            WHERE b.item_id IN :itemIds
-            GROUP BY b.item_id
-            """,nativeQuery = true)
+            WHERE b.item_id IN (:itemIds)
+            GROUP BY b.item_id, b.creator_id
+            """, nativeQuery = true)
     List<GetHighestBidAlongWithItemIds> getItemsHighestBidGivenItemIds(@Param("itemIds") List<UUID> itemIds);
 
     @Query(value="""

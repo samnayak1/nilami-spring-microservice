@@ -25,7 +25,7 @@ import com.nilami.catalogservice.services.serviceAbstractions.ItemService;
 import io.swagger.v3.oas.annotations.Parameter;
 
 @RestController
-@RequestMapping("/api/v1/items")
+@RequestMapping("/api/items/v1")
 @RequiredArgsConstructor
 @Slf4j
 public class ItemController {
@@ -105,7 +105,7 @@ public class ItemController {
 
             List<URL> pictureUrls = pictures.stream()
                     .map(pictureId -> fileUploadService
-                            .generateDownloadPresignedUrl(request.getItemId() + "/" + pictureId))
+                            .generateDownloadPresignedUrl(request.getItemId() + "/" + pictureId,60))
                     .toList();
 
             return ResponseEntity.ok().body(new ApiResponse<List<URL>>(true, "pictures have been added", pictureUrls));

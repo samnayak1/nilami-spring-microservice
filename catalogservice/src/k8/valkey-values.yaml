@@ -1,0 +1,18 @@
+auth:
+  enabled: true
+  usersExistingSecret: "catalog-secret"
+  aclUsers:
+    default:
+      permissions: "~* &* +@all"
+      passwordKey: "valkey-password"
+primary:
+  persistence:
+    enabled: true
+    size: 8Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi

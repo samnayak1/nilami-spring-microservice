@@ -9,3 +9,6 @@ data:
   BID_SERVICE_HOST: http://bid-server-service:8082
 
   ALLOWED_CLIENT_HOSTS: http://localhost:5173,http://127.0.0.1:5173
+
+  RATE_LIMIT_WINDOW_SIZE_SECONDS: "60"
+  RATE_LIMIT_MAX_REQUESTS: "100"

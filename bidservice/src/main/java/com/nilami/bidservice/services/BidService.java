@@ -8,6 +8,7 @@ import java.util.UUID;
 
 import com.nilami.bidservice.dto.BidDTO;
 import com.nilami.bidservice.dto.GetBidsOfUserWithItemDetails;
+import com.nilami.bidservice.dto.GetHighestBidAlongWithItemIds;
 import com.nilami.bidservice.dto.GetIdempotentKeyResponse;
 import com.nilami.bidservice.models.Bid;
 
@@ -20,4 +21,5 @@ public interface BidService {
       public List<GetBidsOfUserWithItemDetails>  getBidsOfUserAlongWithHighestBidForItem(String userId);
       public GetIdempotentKeyResponse getIdempotentKey(String itemId,BigDecimal bidAmount,String userId);
       Map<String, BigDecimal> getItemsHighestBidGivenItemIds(List<UUID> itemIds);
+      Map<String, GetHighestBidAlongWithItemIds> getHighestBids(List<UUID> itemIds);
 }

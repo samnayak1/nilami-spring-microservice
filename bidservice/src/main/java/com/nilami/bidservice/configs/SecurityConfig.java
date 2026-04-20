@@ -26,6 +26,7 @@ public class SecurityConfig {
                                                                 "/swagger-ui/**",
                                                                 "/*/swagger-ui/**",
                                                                 "/actuator/prometheus", "/actuator/health/**", "/actuator/info",
+                                                                "/api/bids/v2/highest-bids",
                                                                 "/swagger-ui.html")
                                                 .permitAll()
 

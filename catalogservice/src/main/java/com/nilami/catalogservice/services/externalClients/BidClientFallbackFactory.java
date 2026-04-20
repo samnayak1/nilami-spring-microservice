@@ -7,6 +7,7 @@ import org.springframework.cloud.openfeign.FallbackFactory;
 import org.springframework.stereotype.Component;
 
 import com.nilami.catalogservice.dto.ApiResponse;
+import com.nilami.catalogservice.dto.GetHighestBidAlongWithItemIds;
 import com.nilami.catalogservice.dto.GetHighestBidsRequest;
 
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +23,13 @@ public class BidClientFallbackFactory implements FallbackFactory<BidClient> {
             @Override
             public ApiResponse<Map<String, BigDecimal>> getHighestBidsForItems(GetHighestBidsRequest request) {
                 return new ApiResponse<>(false, "Fallback happened because-" + cause.getMessage(), emptyData);
+            }
+
+            @Override
+            public ApiResponse<Map<String, GetHighestBidAlongWithItemIds>> getHighestBidsAlongWithUserId(
+                    GetHighestBidsRequest request) {
+    
+                return new ApiResponse<>(false, "Fallback happened because-" + cause.getMessage(), Map.of("", null));
             }
         };
     }

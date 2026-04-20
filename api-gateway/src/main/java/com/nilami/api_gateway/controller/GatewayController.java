@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
 @RestController
-@RequestMapping("/api/v1/gateway")
+@RequestMapping("/api/gateway/v1")
 public class GatewayController {
 
 

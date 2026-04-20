@@ -59,7 +59,7 @@ import jakarta.validation.Valid;
 
 @RestController
 @Slf4j
-@RequestMapping("/api/v1/auth")
+@RequestMapping("/api/auth/v1")
 public class AuthController {
 
     private final UserSignupService userSignupService;

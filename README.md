@@ -10,12 +10,13 @@ Nilami is a microservices-based auction platform that allows users to bid on ite
 - **Security & Identity:** AWS Cognito
 - **File Storage:** AWS S3
 - **Secret Management:** HashiCorp Vault
+- **Caching:** Valkey/ Redis
 
 **Client:** [nilami-dashboard](https://github.com/samnayak1/nilami-dashboard)
 
 ---
 
-## Prerequisites
+## Prerequisites to install.
 
 - Docker
 - k3s
@@ -173,6 +174,9 @@ kubectl port-forward svc/catalog-db-rw 5432:5432 &
 # List databases
 kubectl exec -it catalog-db-1 -- psql -U postgres -c "\l"
 
+#bash into pod
+kubectl exec -it catalog-db-1 -- bash
+
 # Direct connection
 psql -h localhost -p 5432 -U <user> -d <database>
 ```
@@ -215,30 +219,7 @@ kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main
 curl -v "http://app.local/ws/socket.io/?EIO=4&transport=polling"
 ```
 
-### Install cert-manager
 
-```bash
-helm repo add jetstack https://charts.jetstack.io
-helm repo update
-
-kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.3/cert-manager.crds.yaml
-
-helm install cert-manager jetstack/cert-manager \
-  --namespace cert-manager \
-  --create-namespace \
-  --version v1.13.3
-```
-
-### Verify cert-manager
-
-```bash
-kubectl get clusterissuer
-kubectl get certificate -n default
-kubectl describe certificate app-local-tls -n default
-kubectl get svc -n kube-system | grep traefik
-```
-
----
 
 ### HTTPS with Let's Encrypt (cert-manager + Traefik)
 
@@ -337,6 +318,16 @@ stripe payment_intents create \
 # Confirm with a test card
 stripe payment_intents confirm <payment_intent_id> --payment-method=pm_card_visa
 ```
+
+---
+## Valkey
+
+```bash
+# Install valkey
+helm repo add valkey https://valkey.io/valkey-helm/
+helm repo update
+helm install my-valkey valkey/valkey -f valkey-values.yaml
+
 
 ---
 

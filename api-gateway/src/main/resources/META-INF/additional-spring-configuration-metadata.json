@@ -18,5 +18,15 @@
     "name": "app.cors.allowed-origins",
     "type": "java.lang.String",
     "description": "A description for 'app.cors.allowed-origins'"
+  },
+  {
+    "name": "rate-limit.window-size-seconds",
+    "type": "java.lang.String",
+    "description": "A description for 'rate-limit.window-size-seconds'"
+  },
+  {
+    "name": "rate-limit.max-requests",
+    "type": "java.lang.String",
+    "description": "A description for 'rate-limit.max-requests'"
   }
 ]}

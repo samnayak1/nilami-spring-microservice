@@ -70,7 +70,7 @@ public class ItemDTO {
                 .pictureIds(item.getPictureIds().stream()
                     .map(pictureId -> {
                         try {
-                            return fileService.generateDownloadPresignedUrl(item.getId()+"/"+pictureId).toString();
+                            return fileService.generateDownloadPresignedUrl(item.getId()+"/"+pictureId,60).toString();
                         } catch (Exception e) {
                             log.error("Could not generate download presign url for {}",item.getId()+"/"+pictureId);
                             return null;
