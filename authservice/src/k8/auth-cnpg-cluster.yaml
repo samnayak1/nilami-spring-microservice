@@ -9,7 +9,8 @@ spec:
   postgresql:
     parameters:
       max_connections: "100"
-      shared_buffers: "256MB"
+      shared_buffers: "256MB"   
+      # much memory PostgreSQL will use to cache table and index blocks before reaching back to disk
   
   bootstrap:
     initdb:
