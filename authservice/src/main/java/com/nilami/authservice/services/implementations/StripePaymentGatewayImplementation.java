@@ -29,25 +29,26 @@ public class StripePaymentGatewayImplementation implements PaymentGatewayService
     @Value("${stripe.webhook.secret}")
     private String webhookSecret;
 
-    @Override
+   @Override
     public CreatePaymentGatewayResponse createPaymentIntent(String userId, long amount, String currency) {
 
         UserDTO user = userService.getUserDetails(userId);
 
         if (user == null) {
+            log.error("createPaymentIntent failed: user not found, userId={}", userId);
             throw new RuntimeException("User not found with id: " + userId);
         }
 
+        log.info("Creating payment intent for userId={}, amount={}, currency={}", userId, amount, currency);
+
         PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
-                .setAmount(amount * 100L) // Amount in cents. Send usd from the frontend because that is kinda the
-                                          // "lingua franca" of currencies
+                .setAmount(amount * 100L)
                 .setCurrency(currency)
                 .putMetadata("userId", userId)
                 .setAutomaticPaymentMethods(
                         PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
                                 .setEnabled(true)
                                 .build())
-                
                 .build();
 
         CreatePaymentGatewayResponse response = new CreatePaymentGatewayResponse();
@@ -55,13 +56,17 @@ public class StripePaymentGatewayImplementation implements PaymentGatewayService
             PaymentIntent paymentIntent = PaymentIntent.create(params);
             response.setClientSecret(paymentIntent.getClientSecret());
             response.setPaymentIntentId(paymentIntent.getId());
+            log.info("Payment intent created successfully, paymentIntentId={}, userId={}",
+                    paymentIntent.getId(), userId);
         } catch (Exception e) {
+            log.error("Failed to create payment intent for userId={}, amount={}, currency={} - {}",
+                    userId, amount, currency, e.getMessage(), e);
             throw new RuntimeException("Failed to create payment intent: " + e.getMessage(), e);
         }
 
         return response;
-
     }
+
 
     @Override
     public Boolean handleWebhook(String payload, String sigHeader) {

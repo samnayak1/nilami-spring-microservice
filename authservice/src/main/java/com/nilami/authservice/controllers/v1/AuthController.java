@@ -243,13 +243,21 @@ public ResponseEntity<?> validateToken(@RequestBody TokenValidationRequest reque
             @Parameter(hidden = true) @RequestHeader("X-User-Id") String userId)
             throws StripeException {
 
-        CreatePaymentGatewayResponse response = paymentGatewayService
-                .createPaymentIntent(
-                        userId,
-                        request.getAmount(),
-                        request.getCurrency());
+        log.info("Received create-payment-intent request, userId={}, amount={}, currency={}",
+                userId, request.getAmount(), request.getCurrency());
 
-        return ResponseEntity.ok(response);
+        try {
+            CreatePaymentGatewayResponse response = paymentGatewayService
+                    .createPaymentIntent(
+                            userId,
+                            request.getAmount(),
+                            request.getCurrency());
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("create-payment-intent failed for userId={} - {}", userId, e.getMessage(), e);
+            throw e;
+        }
     }
 
     @PostMapping("/payment/webhook")
