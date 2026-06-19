@@ -6,21 +6,60 @@ Nilami is a microservices-based auction platform that allows users to bid on ite
 - **Backend:** Spring Boot, Spring Data JPA
 - **Database Migration:** Flyway
 - **Containerization:** Docker
-- **Orchestration:** Kubernetes
+- **Orchestration:** Kubernetes (k3s)
 - **Security & Identity:** AWS Cognito
 - **File Storage:** AWS S3
 - **Secret Management:** HashiCorp Vault
-- **Caching:** Valkey/ Redis
+- **Caching:** Valkey/Redis
 
 **Client:** [nilami-dashboard](https://github.com/samnayak1/nilami-dashboard)
 
 ---
 
-## Prerequisites to install.
+## Prerequisites
 
 - Docker
 - k3s
 - Helm
+
+---
+
+## Features
+
+### Authentication & Account Management
+
+![Login Page](demo-images/login-page.png)
+*User login page with sign-up option and free credits promotion*
+
+![User Profile](demo-images/balance.png)
+*User account dashboard showing member details and available wallet balance*
+
+### Auction Management
+
+#### Create New Auction (Admin)
+
+![Create Auction Item](demo-images/create-auction.png)
+*Admin interface for creating and listing new auction items with details, pricing, and categories*
+
+#### Browse & Browse Auctions
+
+![Browse Categories](demo-images/home-page.png)
+*Browse auctions by category with latest items displayed*
+
+#### Item Details & Bidding
+
+![Item Detail Page](demo-images/item-page.png)
+*Item detail page showing current highest bid, auction end time, and bidding interface*
+
+### Bidding History
+
+![Bidding History](demo-images/bid-list.png)
+*View all past and current bids with bid amount, status, and auction timeline*
+
+### Payment
+
+![Top Up Balance](demo-images/topup-balance.png)
+*Wallet top-up interface with Stripe integration for card payments*
 
 ---
 
@@ -63,6 +102,9 @@ sudo systemctl stop k3s
 sudo systemctl status k3s
 ```
 
+![Kubernetes Pods Status](demo-images/kubectl get pods.png)
+*Checking running pods in the Kubernetes cluster*
+
 ---
 
 ## API Documentation (Swagger)
@@ -73,7 +115,7 @@ Port-forward the API gateway, then open the Swagger UI:
 kubectl port-forward svc/api-gateway 8084:8084
 ```
 
-Visit: `http://localhost:8080/swagger-ui.html`
+Visit: `http://localhost:8084/swagger-ui.html`
 
 ---
 
@@ -174,7 +216,7 @@ kubectl port-forward svc/catalog-db-rw 5432:5432 &
 # List databases
 kubectl exec -it catalog-db-1 -- psql -U postgres -c "\l"
 
-#bash into pod
+# Bash into pod
 kubectl exec -it catalog-db-1 -- bash
 
 # Direct connection
@@ -218,8 +260,6 @@ kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main
 ```bash
 curl -v "http://app.local/ws/socket.io/?EIO=4&transport=polling"
 ```
-
-
 
 ### HTTPS with Let's Encrypt (cert-manager + Traefik)
 
@@ -299,7 +339,7 @@ spec:
 
 ---
 
-## Stripe
+## Payment Integration (Stripe)
 
 ```bash
 # Listen for events in development
@@ -320,14 +360,15 @@ stripe payment_intents confirm <payment_intent_id> --payment-method=pm_card_visa
 ```
 
 ---
-## Valkey
+
+## Valkey (Redis)
 
 ```bash
 # Install valkey
 helm repo add valkey https://valkey.io/valkey-helm/
 helm repo update
 helm install my-valkey valkey/valkey -f valkey-values.yaml
-
+```
 
 ---
 
@@ -380,6 +421,4 @@ kubectl get secret monitoring-grafana -o jsonpath="{.data.admin-password}" | bas
 | View resource usage | `kubectl top pods --all-namespaces --sort-by=memory` |
 | Clear kubectl cache | `rm -rf ~/.kube/cache ~/.kube/http-cache` |
 
-
-
-
+---
