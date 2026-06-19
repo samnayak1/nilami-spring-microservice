@@ -31,7 +31,7 @@ Nilami is a microservices-based auction platform that allows users to bid on ite
 ![Login Page](demo-images/login-page.png)
 *User login page with sign-up option and free credits promotion*
 
-![User Profile](demo-images/user-profile.png)
+![User Profile](demo-images/balance.png)
 *User account dashboard showing member details and available wallet balance*
 
 ### Auction Management
@@ -43,22 +43,22 @@ Nilami is a microservices-based auction platform that allows users to bid on ite
 
 #### Browse & Browse Auctions
 
-![Browse Categories](demo-images/browse-categories.png)
+![Browse Categories](demo-images/home-page.png)
 *Browse auctions by category with latest items displayed*
 
 #### Item Details & Bidding
 
-![Item Detail Page](demo-images/item-detail.png)
+![Item Detail Page](demo-images/item-page.png)
 *Item detail page showing current highest bid, auction end time, and bidding interface*
 
 ### Bidding History
 
-![Bidding History](demo-images/bidding-history.png)
+![Bidding History](demo-images/bid-list.png)
 *View all past and current bids with bid amount, status, and auction timeline*
 
 ### Payment
 
-![Top Up Balance](demo-images/top-up-balance.png)
+![Top Up Balance](demo-images/topup-balance.png)
 *Wallet top-up interface with Stripe integration for card payments*
 
 ---
@@ -102,7 +102,7 @@ sudo systemctl stop k3s
 sudo systemctl status k3s
 ```
 
-![Kubernetes Pods Status](demo-images/kubectl-pods.png)
+![Kubernetes Pods Status](demo-images/kubectl get pods.png)
 *Checking running pods in the Kubernetes cluster*
 
 ---
