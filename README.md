@@ -277,67 +277,8 @@ Wait until all three pods are running:
 kubectl get pods -n cert-manager
 ```
 
-**Step 2 — Create the ClusterIssuer**
-
-The `ClusterIssuer` tells cert-manager how to communicate with Let's Encrypt. Create `issuer.yaml`:
-
-```yaml
-apiVersion: cert-manager.io/v1
-kind: ClusterIssuer
-metadata:
-  name: letsencrypt-prod
-spec:
-  acme:
-    server: https://acme-v02.api.letsencrypt.org/directory
-    email: your-email@example.com  # Use a real email to receive renewal alerts
-    privateKeySecretRef:
-      name: letsencrypt-prod-key
-    solvers:
-    - http01:
-        ingress:
-          class: traefik
-```
-
-```bash
-kubectl apply -f issuer.yaml
-```
-
-**Step 3 — Update the Ingress**
-
-Add the cert-manager annotation and a `tls` block to `app-ingress`. cert-manager will automatically create and populate the TLS secret.
-
-```bash
-kubectl edit ingress app-ingress
-```
-
-```yaml
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: app-ingress
-  annotations:
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
-    kubernetes.io/ingress.class: "traefik"
-    acme.cert-manager.io/http01-edit-in-place: "true"
-spec:
-  tls:
-  - hosts:
-    - server.nilami.click
-    secretName: server-nilami-tls  # Created automatically by cert-manager
-  rules:
-  - host: server.nilami.click
-    http:
-      paths:
-      - path: /api
-        pathType: Prefix
-        backend:
-          service:
-            name: api-gateway
-            port:
-              number: 8084
-```
-
----
+kubectl create namespace argocd
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
 ## Payment Integration (Stripe)
 
