@@ -13,13 +13,25 @@ spec:
       labels:
         app: auth-server
     spec:
+      securityContext:             # pod-level: applies to all containers
+        runAsNonRoot: true         # refuse to run as root
+        runAsUser: 1000            # run as UID 1000
+        runAsGroup: 1000           # run as GID 1000
+        fsGroup: 1000              # volume mounts owned by GID 1000
+        seccompProfile:
+          type: RuntimeDefault     # restricts syscalls to a safe default set
       containers:
         - name: auth-server
           image: samnayak1/auth-server:2.0.6
           imagePullPolicy: IfNotPresent
+          securityContext:                   # container-level
+            allowPrivilegeEscalation: false  # can't gain more privileges than parent
+            readOnlyRootFilesystem: true     # filesystem is read-only
+            capabilities:
+              drop:
+                - ALL                       
           ports:
             - containerPort: 8081
-
           resources:
             limits:
               memory: "512Mi"
@@ -27,28 +39,24 @@ spec:
             requests:
               memory: "128Mi"
               cpu: "50m"
-
-          readinessProbe:  #has the app started
+          readinessProbe:
             httpGet:
-              path: /actuator/health/readiness  
+              path: /actuator/health/readiness
               port: 8081
-            initialDelaySeconds: 30  
-            periodSeconds: 10        
-            timeoutSeconds: 5    
-            successThreshold: 1      
-            failureThreshold: 3     
-         
-          livenessProbe:  #is the app running
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          livenessProbe:
             httpGet:
-              path: /actuator/health/liveness   
+              path: /actuator/health/liveness
               port: 8081
-            initialDelaySeconds: 60 
-            periodSeconds: 15      
-            timeoutSeconds: 5      
-            failureThreshold: 3     
-          
-         
-          startupProbe: #delays liveness checks until the pod succeeds
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          startupProbe:
             httpGet:
               path: /actuator/health/liveness
               port: 8081
@@ -56,12 +64,12 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 30
-
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp              # Spring Boot needs /tmp for writes
           env:
             - name: SERVER_PORT
               value: "8081"
-       
-
             - name: AUTH_SERVER_DB
               valueFrom:
                 configMapKeyRef:
@@ -72,32 +80,21 @@ spec:
                 configMapKeyRef:
                   name: auth-service-config
                   key: AUTH_SERVER_POSTGRES_HOST
-
-  
-
-            
             - name: CATALOG_SERVICE_HOST
               valueFrom:
                 configMapKeyRef:
                   name: auth-service-config
                   key: CATALOG_SERVICE_HOST
-
             - name: BID_SERVICE_HOST
               valueFrom:
                 configMapKeyRef:
                   name: auth-service-config
                   key: BID_SERVICE_HOST
-
-  
             - name: GATEWAY_URL
               valueFrom:
                 configMapKeyRef:
                   name: auth-service-config
                   key: GATEWAY_URL
-
-              
-
-
             - name: AUTH_SERVER_DB_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -108,71 +105,56 @@ spec:
                 secretKeyRef:
                   name: auth-service-secrets
                   key: AUTH_SERVER_DB_USER
-
             - name: JWT_ISSUER_URI
               valueFrom:
                 secretKeyRef:
                   name: auth-service-secrets
                   key: JWT_ISSUER_URI
-
             - name: AWS_REGION
               valueFrom:
                 secretKeyRef:
                   name: auth-service-secrets
                   key: AWS_REGION
-
-
             - name: AWS_COGNITO_USER_POOL_ID
               valueFrom:
                 secretKeyRef:
                   name: auth-service-secrets
                   key: AWS_COGNITO_USER_POOL_ID
-
-
             - name: AWS_CLIENT_ID
               valueFrom:
                 secretKeyRef:
                   name: auth-service-secrets
                   key: AWS_CLIENT_ID
-
-
             - name: AWS_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
                   name: auth-service-secrets
                   key: AWS_CLIENT_SECRET
-
             - name: AWS_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
                   name: catalog-secret
                   key: AWS_ACCESS_KEY
-
             - name: AWS_SECRET_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
                   name: catalog-secret
                   key: AWS_SECRET_ACCESS_KEY
-
             - name: STRIPE_SECRET_KEY
               valueFrom:
                 secretKeyRef:
                   name: auth-service-secrets
                   key: STRIPE_SECRET_KEY
-
             - name: STRIPE_PUBLISHABLE_KEY
               valueFrom:
                 secretKeyRef:
                   name: auth-service-secrets
                   key: STRIPE_PUBLISHABLE_KEY
-
             - name: STRIPE_WEBHOOK_SECRET
               valueFrom:
                 secretKeyRef:
                   name: auth-service-secrets
                   key: STRIPE_WEBHOOK_SECRET
-                  
-
-            
-
-                
+      volumes:
+        - name: tmp
+          emptyDir: {}               # in-memory temp volume for Spring Boot
