@@ -23,7 +23,7 @@ import com.nilami.catalogservice.dto.ApiResponse;
 import com.nilami.catalogservice.dto.GetHighestBidAlongWithItemIds;
 import com.nilami.catalogservice.dto.GetHighestBidsRequest;
 import com.nilami.catalogservice.dto.ItemDTO;
-import com.nilami.catalogservice.dto.ListCacheablePage;
+
 import com.nilami.catalogservice.dto.SimplifiedItemDTO;
 import com.nilami.catalogservice.exceptions.ForbiddenException;
 import com.nilami.catalogservice.exceptions.ItemNotFoundException;
@@ -51,13 +51,11 @@ public class ItemServiceImpl implements ItemService {
 
     private final BidClient bidClient;
 
- 
+    private final ItemCacheService itemCacheService;
 
     @Override
-
     public Page<ItemDTO> getAllItems(String categoryId, Pageable pageable) {
-
-        Page<ItemDTO> dtoList = this.getItemsListFacade(categoryId, pageable);
+        Page<ItemDTO> dtoList = itemCacheService.getItemsListFacade(categoryId, pageable);
 
         List<UUID> itemIds = dtoList.stream()
                 .map(ItemDTO::getId)
@@ -70,32 +68,7 @@ public class ItemServiceImpl implements ItemService {
             item.setHighestBidPrice(highestBid);
         });
 
-        return new PageImpl<ItemDTO>(dtoList.getContent(), pageable, dtoList.getTotalElements());
-
-    }
-
-    @Transactional(readOnly = true)
-    @Cacheable(value = "itemFirstPage", key = "#categoryId != null ? #categoryId : 'all'", // parameter categoryId is
-                                                                                           // the caching key but only
-                                                                                           // on first page.
-            condition = "#pageable.pageNumber == 0")
-    private Page<ItemDTO> getItemsListFacade(String categoryId, Pageable pageable) {
-        Page<Item> itemsPage;
-
-        if (categoryId != null && !categoryId.isEmpty()) {
-            itemsPage = itemRepository.findByCategoryId(UUID.fromString(categoryId), pageable);
-        } else {
-
-            itemsPage = itemRepository.findAll(pageable);
-        }
-
-        List<ItemDTO> dtoList = itemsPage.getContent()
-                .stream()
-                .map((item) -> ItemDTO.toItemDTO(item, fileService))
-                .collect(Collectors.toList());
-
-        return new ListCacheablePage<>(dtoList, pageable.getPageNumber(), pageable.getPageSize(),
-                itemsPage.getTotalElements());
+        return new PageImpl<>(dtoList.getContent(), pageable, dtoList.getTotalElements());
     }
 
     @Override
@@ -110,7 +83,7 @@ public class ItemServiceImpl implements ItemService {
     // writes to the cache AND database.
     @Override
     @CacheEvict(value = "itemFirstPage", allEntries = true)
-   public Item createItem(CreateItemRequestType request, String userId) {
+    public Item createItem(CreateItemRequestType request, String userId) {
         UUID categoryIdInUUID = UUID.fromString(request.getCategoryId());
         Category category = categoryRepository.findById(categoryIdInUUID)
                 .orElseThrow(() -> new RuntimeException("Category not found"));
@@ -151,12 +124,11 @@ public class ItemServiceImpl implements ItemService {
         return true;
     }
 
-       @Override
+    @Override
 
     public ItemDTO getItem(String itemId) {
-        ItemDTO itemDTO = this.getItemFacade(itemId);
+        ItemDTO itemDTO = itemCacheService.getItemFacade(itemId);
 
-        
         List<UUID> itemIds = List.of(UUID.fromString(itemId));
 
         Map<String, BigDecimal> highestBids = getHighestBids(itemIds);
@@ -167,16 +139,9 @@ public class ItemServiceImpl implements ItemService {
         return itemDTO;
     }
 
-    @Cacheable(value = "item", key = "#itemId")
-    public ItemDTO getItemFacade(String itemId) {
-        UUID itemIdInUUID = UUID.fromString(itemId);
-        Item item = itemRepository.findById(itemIdInUUID)
-                .orElseThrow(() -> new RuntimeException("Item not found"));
-        return ItemDTO.toItemDTO(item, fileService);
-    }
-
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "itemSearch", key = "#keyword + '_' + #pageable.pageNumber + '_' + #pageable.pageSize", condition = "#pageable.pageNumber == 0 && #keyword.length() >= 3")
     public Page<ItemDTO> searchItem(String keyword, Pageable pageable) {
         String keywordSanitized = escapeLike(keyword);
         Page<Item> itemsPage = itemRepository
@@ -209,17 +174,16 @@ public class ItemServiceImpl implements ItemService {
         }).collect(Collectors.toList()).toArray(UUID[]::new);
 
         List<SimplifiedItemDTO> items = itemRepository.findItemsByVirtualIdList(itemUUIDs)
-    .stream()
-    .map(p -> new SimplifiedItemDTO(
-        p.getId(),
-        p.getTitle(),
-        p.getBasePrice(),
-        p.getBrand(),
-        p.getExpiryTime(),
-        p.getDeleted(),
-        p.getLocation() 
-    ))
-    .collect(Collectors.toList());
+                .stream()
+                .map(p -> new SimplifiedItemDTO(
+                        p.getId(),
+                        p.getTitle(),
+                        p.getBasePrice(),
+                        p.getBrand(),
+                        p.getExpiryTime(),
+                        p.getDeleted(),
+                        p.getLocation()))
+                .collect(Collectors.toList());
 
         return items;
 
@@ -254,7 +218,8 @@ public class ItemServiceImpl implements ItemService {
 
         try {
             GetHighestBidsRequest request = new GetHighestBidsRequest(itemIds);
-            ApiResponse<Map<String, GetHighestBidAlongWithItemIds>> response = bidClient.getHighestBidsAlongWithUserId(request);
+            ApiResponse<Map<String, GetHighestBidAlongWithItemIds>> response = bidClient
+                    .getHighestBidsAlongWithUserId(request);
 
             if (!response.getSuccess() || response.getData() == null) {
                 log.error("Failed to fetch highest bids along with user id: {}", response.getMessage());
@@ -267,9 +232,5 @@ public class ItemServiceImpl implements ItemService {
             return Collections.emptyMap();
         }
     }
-   
-
-    
-   
 
 }

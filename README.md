@@ -102,7 +102,7 @@ sudo systemctl stop k3s
 sudo systemctl status k3s
 ```
 
-![Kubernetes Pods Status](demo-images/kubectl get pods.png)
+![Kubernetes Pods Status](demo-images/pod-list.png)
 *Checking running pods in the Kubernetes cluster*
 
 ---

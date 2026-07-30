@@ -1,6 +1,8 @@
 package com.nilami.catalogservice.configs;
 
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -33,13 +35,20 @@ public class CacheConfig {
                 new GenericJackson2JsonRedisSerializer(mapper)
             );
 
-        RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
+        RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
             .entryTtl(Duration.ofMinutes(10))
             .serializeValuesWith(serializer)
             .disableCachingNullValues();
 
+        Map<String, RedisCacheConfiguration> cacheConfigs = new HashMap<>();
+        cacheConfigs.put("itemFirstPage", defaultConfig.entryTtl(Duration.ofMinutes(10)));
+        cacheConfigs.put("item",          defaultConfig.entryTtl(Duration.ofMinutes(10)));
+        cacheConfigs.put("categories",    defaultConfig.entryTtl(Duration.ofHours(1)));
+        cacheConfigs.put("itemSearch",    defaultConfig.entryTtl(Duration.ofMinutes(2)));
+
         return RedisCacheManager.builder(factory)
-            .cacheDefaults(config)
+            .cacheDefaults(defaultConfig)
+            .withInitialCacheConfigurations(cacheConfigs)
             .build();
     }
 }
