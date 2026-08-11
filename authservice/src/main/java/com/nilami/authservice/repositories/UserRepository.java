@@ -12,7 +12,7 @@ import com.nilami.authservice.models.UserModel;
 
 import jakarta.persistence.LockModeType;
 
-@Repository
+
 public interface UserRepository extends JpaRepository<UserModel,UUID> {
 
     boolean existsByEmail(String email);

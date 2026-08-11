@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.lang.NonNull;
-import org.springframework.stereotype.Repository;
+
 
 import com.nilami.bidservice.dto.GetBidsOfUserAlongWithHighestBidForItemResponseBody;
 import com.nilami.bidservice.dto.GetHighestBidAlongWithItemIds;
@@ -19,7 +19,7 @@ import jakarta.persistence.LockModeType;
 import jakarta.transaction.Transactional;
 
 
-@Repository
+
 public interface BidRepository extends JpaRepository<Bid,UUID>{
 
     Optional<Bid> findTopByItemIdOrderByCreatedDesc(@NonNull UUID itemId);

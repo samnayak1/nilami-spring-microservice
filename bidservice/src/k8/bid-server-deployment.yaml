@@ -14,34 +14,46 @@ spec:
       labels:
         app: bid-server
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: bid-server
           image: samnayak1/bidservice:1.0.35
           imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
           ports:
             - containerPort: 8082
-
-          readinessProbe:  #has the app started
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          readinessProbe:
             httpGet:
-              path: /actuator/health/readiness  
+              path: /actuator/health/readiness
               port: 8082
-            initialDelaySeconds: 30  
-            periodSeconds: 10        
-            timeoutSeconds: 5    
-            successThreshold: 1      
-            failureThreshold: 3     
-         
-          livenessProbe:  #is the app running
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          livenessProbe:
             httpGet:
-              path: /actuator/health/liveness   
+              path: /actuator/health/liveness
               port: 8082
-            initialDelaySeconds: 60 
-            periodSeconds: 15      
-            timeoutSeconds: 5      
-            failureThreshold: 3     
-          
-         
-          startupProbe: #delays liveness checks until the pod succeeds
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          startupProbe:
             httpGet:
               path: /actuator/health/liveness
               port: 8082
@@ -49,30 +61,24 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 30
-
           env:
             - name: SERVER_PORT
               value: "8082"
-
             - name: POSTGRES_HOST
               valueFrom:
                 configMapKeyRef:
                   name: bid-service-config
                   key: POSTGRES_HOST
-
-            
             - name: AUTH_SERVICE_HOST
               valueFrom:
                 configMapKeyRef:
                   name: bid-service-config
                   key: AUTH_SERVICE_HOST
-
             - name: CATALOG_SERVICE_HOST
               valueFrom:
                 configMapKeyRef:
                   name: bid-service-config
                   key: CATALOG_SERVICE_HOST
-
             - name: GATEWAY_URL
               valueFrom:
                 configMapKeyRef:
@@ -83,11 +89,15 @@ spec:
                 configMapKeyRef:
                   name: bid-service-config
                   key: KAFKA_BROKER_SERVICE
-
+            - name: KAFKA_CLIENT_JAAS_CONFIG
+              valueFrom:
+                configMapKeyRef:
+                  name: bid-service-config
+                  key: KAFKA_CLIENT_JAAS_CONFIG
             - name: KAFKA_USERNAME
               valueFrom:
                 secretKeyRef:
-                  name: bid-secret  
+                  name: bid-secret
                   key: KAFKA_USERNAME
             - name: KAFKA_PASSWORD
               valueFrom:
@@ -109,12 +119,6 @@ spec:
                 secretKeyRef:
                   name: bid-secret
                   key: POSTGRES_PASSWORD
-            - name: KAFKA_CLIENT_JAAS_CONFIG
-              valueFrom:
-                 configMapKeyRef: 
-                   name: bid-service-config
-                   key: KAFKA_CLIENT_JAAS_CONFIG
-                
           resources:
             limits:
               memory: "512Mi"
@@ -122,4 +126,6 @@ spec:
             requests:
               memory: "128Mi"
               cpu: "50m"
-
+      volumes:
+        - name: tmp
+          emptyDir: {}

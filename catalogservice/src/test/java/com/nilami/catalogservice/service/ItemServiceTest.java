@@ -45,6 +45,7 @@ import com.nilami.catalogservice.repositories.CategoryRepository;
 import com.nilami.catalogservice.repositories.ItemRepository;
 import com.nilami.catalogservice.services.externalClients.BidClient;
 import com.nilami.catalogservice.services.serviceAbstractions.FileUploadService;
+import com.nilami.catalogservice.services.serviceImplementations.ItemCacheService;
 import com.nilami.catalogservice.services.serviceImplementations.ItemServiceImpl;
 
 @ExtendWith(MockitoExtension.class)
@@ -58,6 +59,10 @@ public class ItemServiceTest {
 
     @Mock
     private BidClient bidClient;
+
+    @Mock 
+    private ItemCacheService itemCacheService;
+
 
     @InjectMocks
     private ItemServiceImpl itemService;
@@ -93,63 +98,149 @@ public class ItemServiceTest {
                 .deleted(false)
                 .build();
     }
+@Test
+void testGetItem() throws Exception {
+    //mock file service FIRST
+    when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic1.png", 60))
+            .thenReturn(URI.create("https://mock-s3.com/pic1.png").toURL());
+    when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic2.jpg", 60))
+            .thenReturn(URI.create("https://mock-s3.com/pic2.jpg").toURL());
 
-    @Test
-    void testGetItem() throws Exception {
-        when(itemRepository.findById(item.getId())).thenReturn(Optional.of(item));
-        when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic1.png",60))
-                .thenReturn(URI.create("https://mock-s3.com/pic1.png").toURL());
-        when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic2.jpg",60))
-                .thenReturn(URI.create("https://mock-s3.com/pic2.jpg").toURL());
-                Map<String, BigDecimal> highestBidsMap = new HashMap<>();
-        highestBidsMap.put(item.getId().toString(), new BigDecimal("100.00"));
+    //mock cache service
+    ItemDTO itemDTO = ItemDTO.toItemDTO(item, fileService);
+    when(itemCacheService.getItemFacade(item.getId().toString())).thenReturn(itemDTO);
+
+    Map<String, BigDecimal> highestBidsMap = new HashMap<>();
+    highestBidsMap.put(item.getId().toString(), new BigDecimal("100.00"));
+    
+    ApiResponse<Map<String, BigDecimal>> mockResponse = 
+        new ApiResponse<>(true, "Success", highestBidsMap);
+    
+    when(bidClient.getHighestBidsForItems(any(GetHighestBidsRequest.class)))
+        .thenReturn(mockResponse);
+
+    //execute
+    ItemDTO result = itemService.getItem(item.getId().toString());
+
+    //verify
+    assertNotNull(result);
+    assertEquals("Laptop", result.getTitle());
+    assertEquals(2, result.getPictureIds().size());
+    assertEquals(new BigDecimal("100.00"), result.getHighestBidPrice());
+    
+    verify(itemCacheService, times(1)).getItemFacade(item.getId().toString());
+    verify(fileService, times(2)).generateDownloadPresignedUrl(anyString(), anyLong());
+    verify(bidClient, times(1)).getHighestBidsForItems(any(GetHighestBidsRequest.class));
+}
+
+@Test
+void testGetAllItems() throws Exception {
+    //mock file service 
+    when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic1.png", 60))
+            .thenReturn(URI.create("https://mock-s3.com/pic1.png").toURL());
+    when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic2.jpg", 60))
+            .thenReturn(URI.create("https://mock-s3.com/pic2.jpg").toURL());
+
         
-        ApiResponse<Map<String, BigDecimal>> mockResponse = 
-            new ApiResponse<>(true, "Success", highestBidsMap);
-        
-        when(bidClient.getHighestBidsForItems(any(GetHighestBidsRequest.class)))
-            .thenReturn(mockResponse);
+    ItemDTO itemDTO = ItemDTO.toItemDTO(item, fileService);
+    
+    Page<ItemDTO> cachedPage = new PageImpl<>(List.of(itemDTO), PageRequest.of(0, 10), 1);
+    
+    // mock cache servicew
+    when(itemCacheService.getItemsListFacade(null, PageRequest.of(0, 10)))
+        .thenReturn(cachedPage);
 
-        ItemDTO result = itemService.getItem(item.getId().toString());
+    //mock highest bid client service
+    Map<String, BigDecimal> highestBidsMap = new HashMap<>();
+    highestBidsMap.put(item.getId().toString(), new BigDecimal("100.00"));
+    
+    ApiResponse<Map<String, BigDecimal>> mockResponse = 
+        new ApiResponse<>(true, "Success", highestBidsMap);
 
-        assertNotNull(result);
-        assertEquals("Laptop", result.getTitle());
-        verify(itemRepository, times(1)).findById(item.getId());
-        assertEquals(2, result.getPictureIds().size());
-        verify(fileService, times(2)).generateDownloadPresignedUrl(anyString(),anyLong());
-    }
+    when(bidClient.getHighestBidsForItems(any(GetHighestBidsRequest.class)))
+        .thenReturn(mockResponse);
 
-    @Test
-    void testGetAllItems() throws Exception {
-        Page<Item> page = new PageImpl<>(List.of(item));
-        when(itemRepository.findAll(PageRequest.of(0, 10))).thenReturn(page);
-        when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic1.png",60))
-                .thenReturn(URI.create("https://mock-s3.com/pic1.png").toURL());
-        when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic2.jpg",60))
-                .thenReturn(URI.create("https://mock-s3.com/pic2.jpg").toURL());
+    // Execute
+    Page<ItemDTO> result = itemService.getAllItems(null, PageRequest.of(0, 10));
 
-        UUID item2Id=UUID.randomUUID();
-        UUID item3Id=UUID.randomUUID();
+    // Verify
+    assertNotNull(result);
+    assertEquals(1, result.getTotalElements());
+    assertEquals("Laptop", result.getContent().get(0).getTitle());
+    assertEquals(new BigDecimal("100.00"), result.getContent().get(0).getHighestBidPrice());
+    
+    verify(itemCacheService, times(1)).getItemsListFacade(null, PageRequest.of(0, 10));
+    verify(bidClient, times(1)).getHighestBidsForItems(any(GetHighestBidsRequest.class));
+    verify(fileService, times(2)).generateDownloadPresignedUrl(anyString(), anyLong());
+}
 
-                
-      
-        Map<String, BigDecimal> highestBidsMap = new HashMap<>();
-        highestBidsMap.put(item.getId().toString(), new BigDecimal("100.00"));
-        highestBidsMap.put(item2Id.toString(), new BigDecimal("250.50"));
-        highestBidsMap.put(item3Id.toString(), new BigDecimal("75.25"));
-        
-        ApiResponse<Map<String, BigDecimal>> mockResponse = 
-            new ApiResponse<>(true, "Success", highestBidsMap);
+@Test
+void testGetAllItemsWithCategoryId() throws Exception {
+    String categoryId = UUID.randomUUID().toString();
+    
+    // mock file service
+    when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic1.png", 60))
+            .thenReturn(URI.create("https://mock-s3.com/pic1.png").toURL());
+    when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic2.jpg", 60))
+            .thenReturn(URI.create("https://mock-s3.com/pic2.jpg").toURL());
 
-        when(bidClient.getHighestBidsForItems(any(GetHighestBidsRequest.class)))
-            .thenReturn(mockResponse);
+    // mock cache service
+    ItemDTO itemDTO = ItemDTO.toItemDTO(item, fileService);
+    
+    Page<ItemDTO> cachedPage = new PageImpl<>(List.of(itemDTO), PageRequest.of(0, 10), 1);
+    
+    when(itemCacheService.getItemsListFacade(categoryId, PageRequest.of(0, 10)))
+        .thenReturn(cachedPage);
 
-        Page<ItemDTO> result = itemService.getAllItems(null,PageRequest.of(0, 10));
+    // mock when returning highest bid from the bid service
+    Map<String, BigDecimal> highestBidsMap = new HashMap<>();
+    highestBidsMap.put(item.getId().toString(), new BigDecimal("100.00"));
+    
+    ApiResponse<Map<String, BigDecimal>> mockResponse = 
+        new ApiResponse<>(true, "Success", highestBidsMap);
 
-        assertEquals(1, result.getTotalElements());
-        assertEquals("Laptop", result.getContent().get(0).getTitle());
-        verify(itemRepository, times(1)).findAll(any(PageRequest.class));
-    }
+    when(bidClient.getHighestBidsForItems(any(GetHighestBidsRequest.class)))
+        .thenReturn(mockResponse);
+
+    //execute
+    Page<ItemDTO> result = itemService.getAllItems(categoryId, PageRequest.of(0, 10));
+
+    //verify
+    assertNotNull(result);
+    assertEquals(1, result.getTotalElements());
+    assertEquals(new BigDecimal("100.00"), result.getContent().get(0).getHighestBidPrice());
+    
+    verify(itemCacheService, times(1)).getItemsListFacade(categoryId, PageRequest.of(0, 10));
+}
+
+@Test
+void testGetItemWhenBidClientFails() throws Exception {
+    //mock file service FIRST
+    when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic1.png", 60))
+            .thenReturn(URI.create("https://mock-s3.com/pic1.png").toURL());
+    when(fileService.generateDownloadPresignedUrl(item.getId() + "/pic2.jpg", 60))
+            .thenReturn(URI.create("https://mock-s3.com/pic2.jpg").toURL());
+
+    //mokc cache service
+    ItemDTO itemDTO = ItemDTO.toItemDTO(item, fileService);
+    when(itemCacheService.getItemFacade(item.getId().toString())).thenReturn(itemDTO);
+
+    // mock client fails 
+    when(bidClient.getHighestBidsForItems(any(GetHighestBidsRequest.class)))
+        .thenThrow(new RuntimeException("Bid service unavailable"));
+
+    //execute
+    ItemDTO result = itemService.getItem(item.getId().toString());
+
+    // verify
+    assertNotNull(result);
+    assertEquals("Laptop", result.getTitle());
+    assertEquals(BigDecimal.ZERO, result.getHighestBidPrice());
+    
+    verify(itemCacheService, times(1)).getItemFacade(item.getId().toString());
+    verify(bidClient, times(1)).getHighestBidsForItems(any(GetHighestBidsRequest.class));
+    verify(fileService, times(2)).generateDownloadPresignedUrl(anyString(), anyLong());
+}
 
     @Test
     void testCheckIfExpiryDatePassed_NotExpired() {

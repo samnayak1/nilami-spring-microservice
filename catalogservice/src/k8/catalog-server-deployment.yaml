@@ -14,121 +14,123 @@ spec:
       labels:
         app: catalog-server
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
-      - name: catalog-server-container
-        image: samnayak1/catalogbackend:2.0.18
-        imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 8085
-
-        readinessProbe:  #has the app started
-          httpGet:
-            path: /actuator/health/readiness  
-            port: 8085
-          initialDelaySeconds: 30
-          periodSeconds: 10
-          timeoutSeconds: 5
-          successThreshold: 1
-          failureThreshold: 3
-         
-        livenessProbe:  #is the app running
-          httpGet:
-            path: /actuator/health/liveness   
-            port: 8085
-          initialDelaySeconds: 60
-          periodSeconds: 15
-          timeoutSeconds: 5
-          failureThreshold: 3
-          
-         
-        startupProbe: #delays liveness checks until the pod succeeds
-          httpGet:
-            path: /actuator/health/liveness
-            port: 8085
-          initialDelaySeconds: 0
-          periodSeconds: 10
-          timeoutSeconds: 5
-          failureThreshold: 30
-        resources:
+        - name: catalog-server-container
+          image: samnayak1/catalogbackend:2.0.20
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: 8085
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8085
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8085
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8085
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 30
+          resources:
             limits:
               memory: "512Mi"
               cpu: "500m"
             requests:
               memory: "128Mi"
               cpu: "50m"
-  
-        env:
-        - name: SERVER_PORT
-          value: "8085"
-
-        - name: POSTGRES_HOST
-                                    
-          valueFrom:
-            configMapKeyRef:
-              name: catalog-config-map      
-              key: POSTGRES_HOST 
-
-
-        - name: AUTH_SERVICE_HOST
-          valueFrom:
-            configMapKeyRef:
-              name: catalog-config-map      
-              key: AUTH_SERVICE_HOST
-
-        - name: BID_SERVICE_HOST
-          valueFrom:
-            configMapKeyRef:
-              name: catalog-config-map      
-              key: BID_SERVICE_HOST
-
-        - name: GATEWAY_URL
-          valueFrom:
-            configMapKeyRef:
-              name: catalog-config-map
-              key: GATEWAY_URL
-
-
-        - name: POSTGRES_USER
-          valueFrom:
-            secretKeyRef:
-              name: catalog-secret
-              key: POSTGRES_USER
-        - name: POSTGRES_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: catalog-secret
-              key: POSTGRES_PASSWORD
-
-        - name: POSTGRES_DB
-          valueFrom:
-            secretKeyRef:
-              name: catalog-secret
-              key: POSTGRES_DB
-        - name: AWS_ACCESS_KEY
-          valueFrom:
-            secretKeyRef:
-              name: catalog-secret
-              key: AWS_ACCESS_KEY
-        - name: valkey-password
-          valueFrom:
-            secretKeyRef:
-              name: catalog-secret
-              key: valkey-password
-        
-        - name: AWS_BUCKET_REGION
-          valueFrom:
-            secretKeyRef:
-              name: catalog-secret
-              key: AWS_BUCKET_REGION
-        - name: AWS_BUCKET_NAME
-          valueFrom:
-            secretKeyRef:
-              name: catalog-secret
-              key: AWS_BUCKET_NAME
-        - name: AWS_SECRET_ACCESS_KEY
-          valueFrom:
-            secretKeyRef:
-              name: catalog-secret
-              key: AWS_SECRET_ACCESS_KEY
-
-          
+          env:
+            - name: SERVER_PORT
+              value: "8085"
+            - name: POSTGRES_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-config-map
+                  key: POSTGRES_HOST
+            - name: AUTH_SERVICE_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-config-map
+                  key: AUTH_SERVICE_HOST
+            - name: BID_SERVICE_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-config-map
+                  key: BID_SERVICE_HOST
+            - name: GATEWAY_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: catalog-config-map
+                  key: GATEWAY_URL
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: catalog-secret
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: catalog-secret
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: catalog-secret
+                  key: POSTGRES_DB
+            - name: AWS_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: catalog-secret
+                  key: AWS_ACCESS_KEY
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: catalog-secret
+                  key: AWS_SECRET_ACCESS_KEY
+            - name: AWS_BUCKET_REGION
+              valueFrom:
+                secretKeyRef:
+                  name: catalog-secret
+                  key: AWS_BUCKET_REGION
+            - name: AWS_BUCKET_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: catalog-secret
+                  key: AWS_BUCKET_NAME
+            - name: valkey-password
+              valueFrom:
+                secretKeyRef:
+                  name: catalog-secret
+                  key: valkey-password
+      volumes:
+        - name: tmp
+          emptyDir: {}
