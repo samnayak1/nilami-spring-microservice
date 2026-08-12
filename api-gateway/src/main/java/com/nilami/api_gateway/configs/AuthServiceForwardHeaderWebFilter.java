@@ -45,7 +45,6 @@ public class AuthServiceForwardHeaderWebFilter implements WebFilter {
         this.rateLimiter = rateLimitFactory.get("sliding");
     }
 
-    @SuppressWarnings("null")
     @Override
     // reactive equivalent of void
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {

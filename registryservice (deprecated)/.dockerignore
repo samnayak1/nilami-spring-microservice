@@ -1,0 +1,33 @@
+# Build output
+target/
+
+# Secrets / local config
+.env
+*.env
+
+# Local runtime data & compose
+volume-data/
+docker-compose.yaml
+docker/
+
+# VCS & docs
+.git
+.gitignore
+.gitattributes
+HELP.md
+README.md
+
+# Maven wrapper (image builds with the base-image maven)
+.mvn/
+mvnw
+mvnw.cmd
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+.classpath
+.project
+.settings/

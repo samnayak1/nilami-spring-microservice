@@ -20,7 +20,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: api-gateway
-          image: samnayak1/api-gateway:3.0.3
+          image: samnayak1/api-gateway:4.0.0
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false

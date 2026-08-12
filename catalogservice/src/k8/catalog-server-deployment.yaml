@@ -23,7 +23,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: catalog-server-container
-          image: samnayak1/catalogbackend:2.0.20
+          image: samnayak1/catalogbackend:3.0.0
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false

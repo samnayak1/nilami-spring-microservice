@@ -11,10 +11,12 @@ import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
-import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.springframework.data.redis.serializer.GenericJacksonJsonRedisSerializer;
+
+import tools.jackson.databind.DefaultTyping;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 
 @Configuration
 @EnableCaching
@@ -22,17 +24,19 @@ public class CacheConfig {
 
     @Bean
     public RedisCacheManager cacheManager(RedisConnectionFactory factory) {
-        ObjectMapper mapper = new ObjectMapper()
-            .registerModule(new JavaTimeModule())
+        // Jackson 3 mappers are immutable; java.time support is built in, so
+        // JavaTimeModule no longer needs registering.
+        ObjectMapper mapper = JsonMapper.builder()
             .activateDefaultTyping(
                 BasicPolymorphicTypeValidator.builder()
                     .allowIfBaseType(Object.class).build(),
-                ObjectMapper.DefaultTyping.NON_FINAL
-            );
+                DefaultTyping.NON_FINAL
+            )
+            .build();
 
         RedisSerializationContext.SerializationPair<Object> serializer =
             RedisSerializationContext.SerializationPair.fromSerializer(
-                new GenericJackson2JsonRedisSerializer(mapper)
+                new GenericJacksonJsonRedisSerializer(mapper)
             );
 
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()

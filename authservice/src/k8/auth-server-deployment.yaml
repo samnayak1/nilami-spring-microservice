@@ -22,7 +22,7 @@ spec:
           type: RuntimeDefault     # restricts syscalls to a safe default set
       containers:
         - name: auth-server
-          image: samnayak1/auth-server:2.0.6
+          image: samnayak1/auth-server:3.0.0
           imagePullPolicy: IfNotPresent
           securityContext:                   # container-level
             allowPrivilegeEscalation: false  # can't gain more privileges than parent

@@ -19,7 +19,6 @@ import jakarta.servlet.http.HttpServletResponse;
 @Component
 public class HeaderAuthenticationFilter extends OncePerRequestFilter {
 
-    @SuppressWarnings("null")
     @Override
     protected void doFilterInternal(HttpServletRequest request,
             HttpServletResponse response,
@@ -44,7 +43,6 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    @SuppressWarnings("null")
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
     String path = request.getServletPath();

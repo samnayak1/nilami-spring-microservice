@@ -270,6 +270,49 @@ stripe payment_intents confirm <payment_intent_id> --payment-method=pm_card_visa
 
 ---
 
+## Deploy the Application
+
+Two ways to apply the manifests, depending on whether the service has Kustomize overlays.
+
+### Kustomize overlays (`kubectl apply -k`)
+
+The api-gateway ships a `base` plus `dev` and `prod` overlays. Point `-k` at the overlay directory — it renders the base and the overlay's patches together:
+
+```bash
+# Development
+kubectl apply -k api-gateway/src/k8/overlays/dev
+
+# Production (also creates the letsencrypt-prod ClusterIssuer)
+kubectl apply -k api-gateway/src/k8/overlays/prod
+```
+
+Preview what an overlay renders before applying it:
+
+```bash
+kubectl kustomize api-gateway/src/k8/overlays/dev
+```
+
+### Plain manifests (`kubectl apply -f`)
+
+The remaining services have no overlays — apply their manifest directories directly:
+
+```bash
+kubectl apply -f authservice/src/k8/
+kubectl apply -f bidservice/src/k8/
+kubectl apply -f catalogservice/src/k8/
+kubectl apply -f notification-service/src/k8/
+```
+
+`-f` also takes a single file or a URL:
+
+```bash
+kubectl apply -f bidservice/src/k8/bid-server-deployment.yaml
+```
+
+> **Note:** the ExternalSecret and CNPG cluster resources in each service directory expect Vault, the External Secrets Operator, and CloudNativePG to already be installed — see [Installation](#installation) and [Configuration](#configuration) above.
+
+---
+
 ## Local Development
 
 ### Image Management

@@ -1,0 +1,23 @@
+# Dependencies & build output (reinstalled/rebuilt inside the image)
+node_modules/
+dist/
+
+# Secrets / local config
+.env
+*.env
+
+# Local compose
+docker-compose.yaml
+
+# VCS & docs
+.git
+.gitignore
+README.md
+
+# IDE
+.idea/
+.vscode/
+
+# Logs
+npm-debug.log*
+*.log

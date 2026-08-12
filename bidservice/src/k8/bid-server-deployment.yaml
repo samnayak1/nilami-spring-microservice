@@ -23,7 +23,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: bid-server
-          image: samnayak1/bidservice:1.0.35
+          image: samnayak1/bidservice:2.0.1
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
